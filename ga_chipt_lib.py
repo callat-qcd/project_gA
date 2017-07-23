@@ -1,6 +1,7 @@
 import gvar as gv
 import scipy.special as spsp
 import numpy as np
+import lsqfit
 
 def format_data(switches, gadf, hqdf):
     gar_list = []
@@ -40,17 +41,16 @@ class fit_class():
         self.F3 = -1.5*np.array([np.sum(cn*kn1[i]/mLn[i]) for i in range(len(mL))])
         return None
     def get_priors(self,p,prior):
-        for k in p['priors'][self.ansatz].keys():
+        for k in p[self.ansatz].keys():
             if int(k[1:]) <= self.n:
-                plist = p['priors'][self.ansatz][k]
-                prior[k] = gv.gvar(plist[0], plist[1])
+                prior[k] = p[self.ansatz][k] 
             else: pass
         return prior
     def dfv(self,p):
         r = 8./3.*p['epi']**2*(p['g0']**3*self.F1+p['g0']*self.F3)
         return r
     def fit_function(self,x,p):
-        if self.ansatz == 'Xpt':
+        if self.ansatz == 'xpt':
             r = p['g0'] #*np.ones_like(p['epi']) # lo
             if self.n >= 1: # DWF O(a) discretization
                 if self.xsb:
@@ -81,8 +81,41 @@ class fit_class():
                 r += p['b4']*p['epi']**2*(p['aw0']**2/(4.*np.pi))
             return r
         else:
-            print 'need to define fit function'
+            print('need to define fit function')
             raise SystemExit
+
+def fit_data(s,p,data,phys):
+    x = data['x']
+    y = data['y']['gar']
+    ansatz = s['ansatz']['type']
+    truncate = s['ansatz']['truncation']
+    xsb = s['ansatz']['xsb']
+    alpha = s['ansatz']['alpha']
+    FV = s['ansatz']['FV']
+    fitc = fit_class(ansatz,truncate,xsb,alpha,data['mpl'],FV)
+    prior = fitc.get_priors(p,data['prior'])
+    fit = lsqfit.nonlinear_fit(data=(x,y),prior=prior,fcn=fitc.fit_function)
+    print(fit)
+    phys = eval_phys(phys,fitc,fit)
+    return {'fit':fit, 'phys':phys, 'fitc': fitc}
+
+def eval_phys(phys,fitc,fit):
+    x = {'afs': 0}
+    F = phys['fpi']/np.sqrt(2)
+    m = phys['mpi']
+    epi = m/(4.*np.pi*F)
+    priorc = dict()
+    for k in fit.p.keys():
+        if k == 'epi':
+            priorc[k] = epi
+        elif k == 'aw0':
+            priorc[k] = 0
+        else:
+            priorc[k] = fit.p[k]
+    fitc.FV = False
+    phys = fitc.fit_function(x,priorc)
+    print(phys)
+    return {'result': phys, 'priorc': priorc, 'epi': epi}
 
 if __name__=='__main__':
     print("chipt library")
