@@ -11,7 +11,8 @@ Download [Anaconda](https://www.continuum.io/downloads) and follow installation 
 conda create --name callat_ga python=3 conda
 source activate callat_ga
 pip install gvar
-pip install lsqfit```
+pip install lsqfit
+```
 
 Key libraries from [gplepage GitHub](https://github.com/gplepage).
 * `gvar` version 8.0
