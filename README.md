@@ -1,6 +1,14 @@
-# project_gA
+# project gA
 
-This project is for the analysis code and data files for our calculation of gA with MDWF on HISQ
+This project is for the analysis code and data files for our calculation of gA with MDWF on HISQ, and contains the following:
+* `ga_workbook.ipynb`: Jupyter notebook for chiral-continuum extrapolation analysis used in the final analysis
+* `github_ga_v1.csv`: Bootstrapped correlation function analysis results in csv format
+  + Correlator data is made easily accessible from Jupyter with `pandas`
+* `ga_chipt_lib.py`: project specific library includes:
+  + correlator data formatting for `lsqfit`
+  + fit function definitions
+  + systematic error breakdown definitions
+  + matplotlib routines
 
 # Setup for Python environment
 ## Download Anaconda and install 
@@ -15,8 +23,8 @@ pip install lsqfit
 ```
 
 Key libraries from [gplepage GitHub](https://github.com/gplepage).
-* `gvar` version 8.0
-* `lsqfit` version 8.1
+* `gvar` version 8.3.2
+* `lsqfit` version 9.1.3
 
 Exit conda environment with
 ```bash
@@ -27,3 +35,11 @@ source deactivate
 ```bash
 jupyter notebook ga_workbook.ipynb
 ```
+
+<figure style="float:right">
+    <img
+    src="./callat_logo.png"
+    width="100"
+    alt="CalLat logo"
+    /img>
+</figure>
