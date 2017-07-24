@@ -125,7 +125,12 @@ def error_budget(s,result):
     statistical = phys.partialsdev(fit.y)
     input_error = phys.partialsdev(priorc['epi'],prior['aw0'])
     # compile chiral and discretization lists then splat as function input
-    X_list = [prior['g0']]
+    if s['ansatz']['type'] == 'taylor':
+        X_list = []
+    elif s['ansatz']['type'] == 'xpt':
+        X_list = [prior['g0']]
+    else:
+        print("fit type not defined")
     d_list = []
     n = s['ansatz']['truncation']
     for k in prior.keys():
@@ -224,7 +229,10 @@ class plot_chiral_fit():
             return ax, {'x':x, 'priorx':priorx}
         def c_data(ax,s,result):
             x = result['fit'].prior['epi']
-            y = result['fit'].y - result['fitc'].dfv(result['fit'].p)
+            if s['ansatz']['FV']:
+                y = result['fit'].y - result['fitc'].dfv(result['fit'].p)
+            else:
+                y = result['fit'].y
             for i,e in enumerate(s['ensembles']):
                 ax.errorbar(x=x[i].mean,xerr=x[i].sdev,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
             return ax
@@ -280,6 +288,162 @@ class plot_chiral_fit():
         ax.xaxis.set_tick_params(labelsize=16)
         ax.yaxis.set_tick_params(labelsize=16)
         plt.draw()
+    def plot_continuum(self,s,data,result):
+        fig = plt.figure('continuum extrapolation',figsize=(7,4.326237))
+        ax = plt.axes([0.15,0.15,0.8,0.8])
+        def a_chiral(ax,result):
+            fit = result['fit']
+            fitc = result['fitc']
+            epi_list = [0.1135, 0.182, 0.248, 0.2714, 0.29828]
+            aw0_extrap = np.linspace(0.0,0.9001,9101)
+            epi = 0
+            c15 = self.plot_params['l1648f211b580m013m065m838']['color']
+            c12 = self.plot_params['l2464f211b600m0170m0509m635']['color']
+            c09 = self.plot_params['l3296f211b630m0074m037m440']['color']
+            ls_list = ['-','--','-.',':','-']
+            label = ['$g_A(\epsilon^{(130)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(220)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(310)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(350)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(400)}_\pi,\epsilon_a)$']
+            color = ['black','black','black','black','black']
+            dashes = [8, 4, 2, 4, 2, 4]
+            fitc.FV = False
+            for i in range(len(epi_list)):
+                x = {'afs': 0}
+                priorx = dict()
+                for k in fit.p.keys():
+                    if k == 'aw0':
+                        priorx[k] = aw0_extrap
+                    elif k == 'epi':
+                        priorx[k] = epi_list[i]
+                    else:
+                        priorx[k] = fit.p[k]
+                extrap = fitc.fit_function(x,priorx)
+                aw0_extrap_plot = aw0_extrap**2/(4*np.pi)
+                if i == 4:
+                    ax.errorbar(x=aw0_extrap_plot,y=[j.mean for j in extrap],ls=ls_list[i],dashes=dashes,marker='',elinewidth=1,color=color[i],label=label[i])
+                else:
+                    ax.errorbar(x=aw0_extrap_plot,y=[j.mean for j in extrap],ls=ls_list[i],marker='',elinewidth=1,color=color[i],label=label[i])
+            return ax
+        def a_cont(ax,result):
+            fit = result['fit']
+            fitc = result['fitc']
+            epi_phys = result['phys']['epi']
+            aw0_extrap = np.linspace(0.0,0.9001,9101)
+            fitc.FV = False
+            x = {'afs': 0}
+            priorx = dict()
+            for k in fit.p.keys():
+                if k == 'epi':
+                    priorx[k] = epi_phys
+                elif k == 'aw0':
+                    priorx[k] = aw0_extrap
+                else:
+                    priorx[k] = fit.p[k]
+            extrap = fitc.fit_function(x,priorx)
+            mean = np.array([j.mean for j in extrap])
+            sdev = np.array([j.sdev for j in extrap])
+            aw0_extrap_plot = aw0_extrap**2/(4*np.pi)
+            ax.fill_between(aw0_extrap_plot,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi^{phys.},\epsilon_a)$')
+            ax.errorbar(x=aw0_extrap_plot,y=mean,ls='-',marker='',elinewidth=1,color='#b36ae2')
+            return ax, {'x':x, 'priorx':priorx}
+        def a_data(ax,s,result):
+            x = result['fit'].prior['aw0']
+            if s['ansatz']['FV']:
+                y = result['fit'].y - result['fitc'].dfv(result['fit'].p)
+            else:
+                y = result['fit'].y
+            for i,e in enumerate(s['ensembles']):
+                xplot = x[i]**2/(4.*np.pi)
+                ax.errorbar(x=xplot.mean,xerr=xplot.sdev,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color']) 
+            return ax
+        def a_pdg(ax,result):
+            gA_pdg = [1.2723, 0.0023]
+            ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
+            return ax
+        def a_legend(ax):
+            handles, labels = ax.get_legend_handles_labels()
+            l0 = [handles[0],handles[-1]]
+            l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
+            leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1)
+            ax.legend(handles=l1,numpoints=1,loc=3,ncol=2)
+            plt.gca().add_artist(leg)
+            return None
+        # continuum extrapolation
+        ax, res = a_cont(ax,result)
+        # chiral extrapolation
+        ax = a_chiral(ax,result)
+        # plot data
+        ax = a_data(ax,s,result)
+        # plot PDG
+        ax = a_pdg(ax,result)
+        # make legend
+        a_legend(ax)
+        # format plot
+        ax.set_ylim([1.075,1.375])
+        ax.set_xlim([-0.001,0.81/(4*np.pi)])
+        ax.set_xlabel('$\epsilon_a^2=a^2/(4\pi w^2_0)$', fontsize=20)
+        ax.set_ylabel('$g_A$', fontsize=20)
+        ax.xaxis.set_tick_params(labelsize=16)
+        ax.yaxis.set_tick_params(labelsize=16)
+        plt.draw()
+    def plot_volume(self,s,data,result):
+        if s['ansatz']['FV'] and s['ansatz']['type'] == 'xpt':
+            fig = plt.figure('infinite volume extrapolation',figsize=(7,4.326237))
+            ax = plt.axes([0.15,0.15,0.8,0.8])
+            def v_vol(ax,s,result):
+                fit = result['fit']
+                ansatz = s['ansatz']['type']
+                truncate = s['ansatz']['truncation']
+                xsb = s['ansatz']['xsb']
+                alpha = s['ansatz']['alpha']
+                FV = s['ansatz']['FV']
+                mpiL_extrap = np.linspace(0.000001,10.200001,10201)
+                fitc = fit_class(ansatz,truncate,xsb,alpha,mpiL_extrap,FV)
+                x = {'afs': 0}
+                priorx = dict()
+                for k in fit.p.keys():
+                    if k == 'epi':
+                        priorx[k] = gv.gvar(0.18220,0.00044)
+                    elif k == 'aw0':
+                        priorx[k] = gv.gvar(0.7036,0.0005)
+                    else:
+                        priorx[k] = fit.p[k]
+                extrap = fitc.fit_function(x,priorx)
+                mean = np.array([j.mean for j in extrap])
+                sdev = np.array([j.sdev for j in extrap])
+                mpiL_extrap_plot = np.exp(-mpiL_extrap)/np.sqrt(mpiL_extrap)
+                ax.fill_between(mpiL_extrap_plot,mean+sdev,mean-sdev,alpha=0.4,color='#70bf41')
+                ax.errorbar(x=mpiL_extrap_plot,y=mean,ls='--',marker='',elinewidth=1,color='#70bf41',label='NLO $\chi$PT prediction')
+                return ax
+            def v_data(ax,s,data,result):
+                x = data['mpl']
+                y = result['fit'].y 
+                for i,e in enumerate(s['ensembles']):
+                    if e in ['l2464f211b600m00507m0507m628','l3264f211b600m00507m0507m628','l4064f211b600m00507m0507m628']:
+                        xplot = np.exp(-x[i])/np.sqrt(x[i])
+                        ax.errorbar(x=xplot,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
+                    else: pass
+                return ax
+            def v_legend(ax):
+                handles, labels = ax.get_legend_handles_labels()
+                leg = ax.legend(handles=handles,loc=2,ncol=1)
+                plt.gca().add_artist(leg)
+                return None
+            # plot IV extrapolation
+            ax = v_vol(ax,s,result)
+            # plot data
+            ax = v_data(ax,s,data,result)
+            # plot legend
+            v_legend(ax)
+            # format plot
+            ax.set_ylim([1.22,1.3])
+            ax.set_xlim([0,0.025])
+            ax.set_xlabel('$e^{-m_\pi L}/(m_\pi L)^{1/2}$', fontsize=20)
+            ax.set_ylabel('$g_A$', fontsize=20)
+            ax.yaxis.set_ticks([1.23,1.25,1.27,1.29])
+            ax.xaxis.set_tick_params(labelsize=16)
+            ax.yaxis.set_tick_params(labelsize=16)
+            plt.draw()
+        else:
+            print('no FV prediction')
 
 if __name__=='__main__':
     print("chipt library")
