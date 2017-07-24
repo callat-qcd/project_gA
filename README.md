@@ -1,15 +1,18 @@
 # project g<sub>A</sub>
 
 This project is for the analysis code and data files for our calculation of g<sub>A</sub> with MDWF on HISQ, and contains the following:
+* `setup.py`: Setup file for Python environment
 * `ga_workbook.ipynb`: Jupyter notebook for chiral-continuum extrapolation analysis used in the final analysis
-* `github_ga_v1.csv`: Bootstrapped correlation function analysis results in csv format
-  + Correlator data is made easily accessible from Jupyter with `pandas`
-* `hisq_params.csv`: a/w<sub>0</sub> and α<sub>s</sub> for HISQ ensembles used for this work in csv format
-* `ga_chipt_lib.py`: project specific library includes:
-  + correlator data formatting for `lsqfit`
-  + fit function definitions
-  + systematic error breakdown definitions
-  + matplotlib routines
+* `data`: Directory of data
+  * `github_ga_v1.csv`: Bootstrapped correlation function analysis results in csv format
+    * Correlator data is made easily accessible from Jupyter with `pandas` and summarized in a dataframe
+  * `hisq_params.csv`: a/w<sub>0</sub> and α<sub>s</sub> for HISQ ensembles used for this work in csv format
+    * HISQ parameters are displayed in `pandas` dataframe
+* `callat_ga_lib`: Library for extrapolation
+  * correlator data formatting for `lsqfit`
+  * fit function definitions
+  * systematic error breakdown definitions
+  * matplotlib routines
 
 # Setup for Python environment
 ## Download Anaconda and install 
@@ -17,10 +20,9 @@ Download [Anaconda](https://www.continuum.io/downloads) and follow installation 
 
 ## Create Python environment with Anaconda
 ```bash
-conda create --name callat_ga python=3 conda
+conda create --name callat_ga python=3 anaconda
 source activate callat_ga
-pip install gvar
-pip install lsqfit
+python setup.py install
 ```
 
 Key libraries from [gplepage GitHub](https://github.com/gplepage).
@@ -39,7 +41,7 @@ jupyter notebook ga_workbook.ipynb
 
 <figure style="float:right">
     <img
-    src="./callat_logo.png"
+    src="./data/callat_logo.png"
     width="100"
     alt="CalLat logo"
     /img>
