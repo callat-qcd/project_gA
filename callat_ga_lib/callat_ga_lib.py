@@ -77,6 +77,8 @@ class fit_class():
             if self.n >= 2:
                 r += p['c2']*p['epi']**2
                 r += p['a2']*(p['aw0']**2/(4.*np.pi))
+                if self.FV:
+                    r += self.dfv(p)
             if self.n >= 4:
                 r += p['c4']*p['epi']**4
                 r += p['a4']*(p['aw0']**4/(4.*np.pi)**2)
@@ -125,12 +127,10 @@ def error_budget(s,result):
     statistical = phys.partialsdev(fit.y)
     input_error = phys.partialsdev(priorc['epi'],prior['aw0'])
     # compile chiral and discretization lists then splat as function input
-    if s['ansatz']['type'] == 'taylor':
-        X_list = []
-    elif s['ansatz']['type'] == 'xpt':
+    if s['ansatz']['FV']:
         X_list = [prior['g0']]
     else:
-        print("fit type not defined")
+        X_list = []
     d_list = []
     n = s['ansatz']['truncation']
     for k in prior.keys():
@@ -229,7 +229,7 @@ class plot_chiral_fit():
             return ax, {'x':x, 'priorx':priorx}
         def c_data(ax,s,result):
             x = result['fit'].prior['epi']
-            if s['ansatz']['FV'] and s['ansatz']['type'] == 'xpt':
+            if s['ansatz']['FV']:
                 y = result['fit'].y - result['fitc'].dfv(result['fit'].p)
             else:
                 y = result['fit'].y
@@ -346,7 +346,7 @@ class plot_chiral_fit():
             return ax, {'x':x, 'priorx':priorx}
         def a_data(ax,s,result):
             x = result['fit'].prior['aw0']
-            if s['ansatz']['FV'] and s['ansatz']['type'] == 'xpt':
+            if s['ansatz']['FV']:
                 y = result['fit'].y - result['fitc'].dfv(result['fit'].p)
             else:
                 y = result['fit'].y
@@ -385,7 +385,7 @@ class plot_chiral_fit():
         ax.yaxis.set_tick_params(labelsize=16)
         plt.draw()
     def plot_volume(self,s,data,result):
-        if s['ansatz']['FV'] and s['ansatz']['type'] == 'xpt':
+        if s['ansatz']['FV']:
             fig = plt.figure('infinite volume extrapolation',figsize=(7,4.326237))
             ax = plt.axes([0.15,0.15,0.8,0.8])
             def v_vol(ax,s,result):

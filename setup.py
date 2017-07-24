@@ -9,10 +9,6 @@ setup(name='callat_ga_lib',
       license='',
       packages=['callat_ga_lib',],
       install_requires=[
-          'numpy',
-          'scipy',
-          'pandas',
-          'matplotlib',
           'lsqfit',
           'gvar'
           ]
