@@ -424,7 +424,7 @@ class plot_chiral_fit():
                 return ax
             def v_legend(ax):
                 handles, labels = ax.get_legend_handles_labels()
-                leg = ax.legend(handles=handles,loc=2,ncol=1)
+                leg = ax.legend(handles=handles,loc=2,ncol=1, fontsize=20,edgecolor='k',fancybox=False)
                 plt.gca().add_artist(leg)
                 return None
             # plot IV extrapolation
