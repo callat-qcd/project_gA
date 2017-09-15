@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(name='callat_ga_lib',
       version='1.0',
@@ -7,9 +7,6 @@ setup(name='callat_ga_lib',
       author_email='chiachang@lbl.gov',
       url='https://github.com/callat-qcd/project_gA',
       license='',
-      packages=['callat_ga_lib',],
-      install_requires=[
-          'lsqfit',
-          'gvar'
-          ]
+      packages=['callat_ga_lib'],
+      install_requires=['lsqfit (>=9.1.3)','gvar (>=8.3.2)']
       )

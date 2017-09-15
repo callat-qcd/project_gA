@@ -84,6 +84,25 @@ class fit_class():
                 r += p['a4']*(p['aw0']**4/(4.*np.pi)**2)
                 r += p['b4']*p['epi']**2*(p['aw0']**2/(4.*np.pi))
             return r
+        elif self.ansatz == 'linear':
+            r = p['c0']
+            if self.n >= 2:
+                r += p['c2']*p['epi']
+                if self.FV:
+                    r += self.dfv(p)
+            if self.n >= 4:
+                r += p['c4']*p['epi']**2
+                r += p['a4']*(p['aw0']**2/(4.*np.pi))
+            return r
+        elif self.ansatz == 'constant':
+            r = p['c0']
+            if self.n >= 2:
+                r += p['a2']*(p['aw0']**2/(4.*np.pi))
+                if self.FV:
+                    r += self.dfv(p)
+            if self.n >= 4:
+                r += p['a4']*(p['aw0']**4/(4.*np.pi)**2)
+            return r
         else:
             print('need to define fit function')
             raise SystemExit

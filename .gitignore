@@ -1,3 +1,4 @@
+testenv*
 .ipynb_checkpoints/
 __pycache__/
 *.swp
