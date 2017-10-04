@@ -287,6 +287,7 @@ class plot_chiral_fit():
         ax.set_ylabel('$g_A$', fontsize=20)
         ax.xaxis.set_tick_params(labelsize=16)
         ax.yaxis.set_tick_params(labelsize=16)
+        self.ax = ax
         plt.draw()
         ### Convergence
         fig = plt.figure('chiral convergence',figsize=(7,4.326237))
