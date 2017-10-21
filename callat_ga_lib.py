@@ -1,3 +1,4 @@
+import sys
 import gvar as gv
 import scipy.special as spsp
 import numpy as np
@@ -11,6 +12,7 @@ def format_data(switches, gadf, hqdf):
     aw0_list = []
     afs_list = []
     mpl_list = []
+    ed_list  = []
     for ens in switches['ensembles']:
         gar = gadf.query("ensemble=='%s'" %ens).sort_values(by='nbs')['ga'].as_matrix()
         epi = gadf.query("ensemble=='%s'" %ens).sort_values(by='nbs')['epi'].as_matrix()
@@ -18,13 +20,16 @@ def format_data(switches, gadf, hqdf):
         awm = hqdf.query("ensemble=='%s'" %ens)['aw0_mean'].as_matrix()[0]
         aws = hqdf.query("ensemble=='%s'" %ens)['aw0_sdev'].as_matrix()[0]
         afs = hqdf.query("ensemble=='%s'" %ens)['alfs'].as_matrix()[0]
+        ed  = hqdf.query("ensemble=='%s'" %ens)['eps_delta'].as_matrix()[0]
         d = gv.dataset.avg_data({'gar': gar, 'epi':epi}, bstrap=True)
         gar_list.append(d['gar'])
         epi_list.append(d['epi'])
         mpl_list.append(mpl)
         aw0_list.append(gv.gvar(awm,aws))
+        ed_list.append(gv.gvar(ed,switches['eps_delta_sig']*ed))
         afs_list.append(afs)
-    data = {'y':{'gar': gar_list}, 'prior':{'epi': epi_list, 'aw0': aw0_list}, 'x':{'afs': afs_list}, 'mpl': mpl_list}
+    data = {'y':{'gar': gar_list}, 'prior':{'epi': epi_list, 'aw0': aw0_list,'ed':ed_list},
+            'x':{'afs': afs_list}, 'mpl': mpl_list}
     return data
 
 class fit_class():
@@ -44,12 +49,35 @@ class fit_class():
         return None
     def get_priors(self,p,prior):
         for k in p[self.ansatz].keys():
-            if int(k[1:]) <= self.n:
-                prior[k] = p[self.ansatz][k] 
+            if int(k[-1]) <= self.n:
+                prior[k] = p[self.ansatz][k]
             else: pass
         return prior
     def dfv(self,p):
         r = 8./3.*p['epi']**2*(p['g0']**3*self.F1+p['g0']*self.F3)
+        return r
+    def R(self,zz):
+        try:
+            d = len(zz)
+        except:
+            d = 0
+            zz = [zz]
+        r = np.zeros_like(zz)
+        for i,z in enumerate(zz):
+            if z == 0:
+                r[i]  = 0
+            elif z > 0. and z < 1.:
+                r[i]  = np.sqrt(1-z) * np.log((1-np.sqrt(1-z))/(1+np.sqrt(1-z)))
+                r[i] += np.log(4./z)
+            elif z == 1:
+                r[i]  = np.log(4.)
+            elif z > 1.:
+                r[i]  = 2*np.sqrt(z-1)*np.arctan(z) + np.log(4./z)
+            else:
+                print('R(z) only defined for z > 0')
+                sys.exit(-1)
+        if d == 0:
+            r = r[0]
         return r
     def fit_function(self,x,p):
         if self.ansatz == 'xpt':
@@ -58,13 +86,48 @@ class fit_class():
                 if self.xsb:
                     r += p['a1']*p['aw0']
             if self.n >= 2: # nlo
-                r += -1.*p['epi']**2*(p['g0']+2.*p['g0']**3)*np.log(p['epi']**2) # nlo log
+                g2  = p['g0'] +2.*p['g0']**3 # nucleon terms
+                r += -1.*p['epi']**2 * g2 *np.log(p['epi']**2) # nlo log
+                # counter terms
                 r += p['epi']**2*p['c2'] # nlo counter term
                 r += (p['aw0']**2/(4.*np.pi))*p['a2'] # nlo discretization
                 if self.alpha:
                     r += x['afs']*(p['aw0']/(4.*np.pi))**2*p['s2'] # nlo alpha_s a^2
                 if self.FV:
                     r += self.dfv(p)
+            if self.n >= 3: # nnlo
+                r += p['g0']*p['c3']*p['epi']**3 # nnlo log
+            if self.n >= 4: # nnnlo analytic terms
+                r += p['epi']**4*p['c4'] # nnnlo epi^4
+                r += p['epi']**2*(p['aw0']**2/(4.*np.pi))*p['b4'] # nnnlo epi^2 a^2
+                r += (p['aw0']**4/(4.*np.pi)**2)*p['a4'] # nnnlo a^4
+            return r
+        elif self.ansatz == 'xpt_delta':
+            r = p['g0']
+            if self.n >= 1: # DWF O(a) discretization
+                if self.xsb:
+                    r += p['a1']*p['aw0']
+            if self.n >= 2: # nlo
+                g2  = p['g0'] +2.*p['g0']**3 # nucleon terms
+                g2 += p['gnd0']**2 *(2.*p['g0'] / 9 +50.*p['gdd0'] / 81) #delta
+                r  += -1.*g2 * p['epi']**2 * np.log(p['epi']**2)
+                # extra delta terms
+                g2r  = p['gnd0']**2 * p['epi']**2 * 32.*p['g0'] / 27
+                g2r += p['gnd0']**2 * p['ed']**2 * (76.*p['g0']/27 +100.*p['gdd0']/81)
+                r   += -1.*g2r * self.R(p['epi']**2 / p['ed']**2)
+                g2d  = 76.*p['g0']*p['gnd0']**2 / 27
+                g2d += 100.*p['gdd0']*p['gnd0']**2 / 81
+                r   += -1.*g2d * p['ed']**2 * np.log(4.*p['ed']**2 / p['epi']**2)
+                # delta mpi^3 term
+                r   += 32.*np.pi / 27 * p['g0']*p['gnd0']**2 * p['epi']**3 / p['ed']
+                # counter terms
+                r += p['epi']**2*p['c2'] # nlo counter term
+                r += (p['aw0']**2/(4.*np.pi))*p['a2'] # nlo discretization
+                if self.alpha:
+                    r += x['afs']*(p['aw0']/(4.*np.pi))**2*p['s2'] # nlo alpha_s a^2
+                if self.FV:# For now - just using nucleon FV function
+                    r += self.dfv(p)
+            # new terms do not include explicit delta
             if self.n >= 3: # nnlo
                 r += p['g0']*p['c3']*p['epi']**3 # nnlo log
             if self.n >= 4: # nnnlo analytic terms
@@ -126,12 +189,15 @@ def eval_phys(phys,fitc,fit):
     F = phys['fpi']/np.sqrt(2)
     m = phys['mpi']
     epi = m/(4.*np.pi*F)
+    ed = phys['Delta']/(4.*np.pi*F)
     priorc = dict()
     for k in fit.p.keys():
         if k == 'epi':
             priorc[k] = epi
         elif k == 'aw0':
             priorc[k] = 0
+        elif k == 'ed':
+            priorc[k] = np.array(ed)
         else:
             priorc[k] = fit.p[k]
     fitc.FV = False
@@ -272,6 +338,9 @@ class plot_chiral_fit():
             plt.gca().add_artist(leg)
             return None
         ### Chiral extrapolation
+        if s['ansatz']['type'] in ['xpt_delta']:
+            print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
+            return 0
         fig = plt.figure('chiral extrapolation',figsize=(7,4.326237))
         ax = plt.axes([0.15,0.15,0.8,0.8])
         # continuum extrapolation
@@ -313,6 +382,9 @@ class plot_chiral_fit():
         ax.yaxis.set_tick_params(labelsize=16)
         plt.draw()
     def plot_continuum(self,s,data,result):
+        if s['ansatz']['type'] in ['xpt_delta']:
+            print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
+            return 0
         fig = plt.figure('continuum extrapolation',figsize=(7,4.326237))
         ax = plt.axes([0.15,0.15,0.8,0.8])
         def a_chiral(ax,result):
@@ -376,7 +448,7 @@ class plot_chiral_fit():
                 y = result['fit'].y
             for i,e in enumerate(s['ensembles']):
                 xplot = x[i]**2/(4.*np.pi)
-                ax.errorbar(x=xplot.mean,xerr=xplot.sdev,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color']) 
+                ax.errorbar(x=xplot.mean,xerr=xplot.sdev,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'])
             return ax
         def a_pdg(ax,result):
             gA_pdg = [1.2723, 0.0023]
@@ -409,6 +481,9 @@ class plot_chiral_fit():
         ax.yaxis.set_tick_params(labelsize=16)
         plt.draw()
     def plot_volume(self,s,data,result):
+        if s['ansatz']['type'] in ['xpt_delta']:
+            print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
+            return 0
         if s['ansatz']['FV']:
             fig = plt.figure('infinite volume extrapolation',figsize=(7,4.326237))
             ax = plt.axes([0.15,0.15,0.8,0.8])
@@ -439,7 +514,7 @@ class plot_chiral_fit():
                 return ax
             def v_data(ax,s,data,result):
                 x = data['mpl']
-                y = result['fit'].y 
+                y = result['fit'].y
                 for i,e in enumerate(s['ensembles']):
                     if e in ['l2464f211b600m00507m0507m628','l3264f211b600m00507m0507m628','l4064f211b600m00507m0507m628']:
                         xplot = np.exp(-x[i])/np.sqrt(x[i])
