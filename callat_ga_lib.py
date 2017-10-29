@@ -101,6 +101,10 @@ class fit_class():
                 r += p['epi']**4*p['c4'] # nnnlo epi^4
                 r += p['epi']**2*(p['aw0']**2/(4.*np.pi))*p['b4'] # nnnlo epi^2 a^2
                 r += (p['aw0']**4/(4.*np.pi)**2)*p['a4'] # nnnlo a^4
+                l2  = -16./3*p['g0'] -11./3*p['g0']**3 +16.*p['g0']**5
+                l2 += 4.*(2*p['g0'] + 4**p['g0']**3)
+                r += l2/4. * p['epi']**4 * (np.log(p['epi']**2))**2
+                r += p['gm4'] * p['epi']**4 * np.log(p['epi']**2)
             return r
         elif self.ansatz == 'xpt_delta':
             r = p['g0']
@@ -151,11 +155,12 @@ class fit_class():
             r = p['c0']
             if self.n >= 2:
                 r += p['c2']*p['epi']
+                r += p['a2']*(p['aw0']**2/(4.*np.pi))
                 if self.FV:
                     r += self.dfv(p)
             if self.n >= 4:
                 r += p['c4']*p['epi']**2
-                r += p['a4']*(p['aw0']**2/(4.*np.pi))
+                r += p['a4']*(p['aw0']**4/(4.*np.pi)**2)
             return r
         elif self.ansatz == 'constant':
             r = p['c0']
