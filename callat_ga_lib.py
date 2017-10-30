@@ -178,16 +178,20 @@ class fit_class():
 def fit_data(s,p,data,phys):
     x = data['x']
     y = data['y']['gar']
-    ansatz = s['ansatz']['type']
-    truncate = s['ansatz']['truncation']
+    ansatz_list = s['ansatz']['type']
     xsb = s['ansatz']['xsb']
     alpha = s['ansatz']['alpha']
     FV = s['ansatz']['FV']
-    fitc = fit_class(ansatz,truncate,xsb,alpha,data['mpl'],FV)
-    prior = fitc.get_priors(p,data['prior'])
-    fit = lsqfit.nonlinear_fit(data=(x,y),prior=prior,fcn=fitc.fit_function)
-    phys = eval_phys(phys,fitc,fit)
-    return {'fit':fit, 'phys':phys, 'fitc': fitc}
+    result = dict()
+    for ansatz_truncate in ansatz_list:
+        ansatz = ansatz_truncate.split('_')[0]
+        truncate = int(ansatz_truncate.split('_')[1])
+        fitc = fit_class(ansatz,truncate,xsb,alpha,data['mpl'],FV)
+        prior = fitc.get_priors(p,data['prior'])
+        fit = lsqfit.nonlinear_fit(data=(x,y),prior=prior,fcn=fitc.fit_function)
+        phys_pt = eval_phys(phys,fitc,fit)
+        result[ansatz_truncate] = {'fit':fit, 'phys':phys_pt, 'fitc': fitc}
+    return result
 
 def eval_phys(phys,fitc,fit):
     x = {'afs': 0}
@@ -209,28 +213,31 @@ def eval_phys(phys,fitc,fit):
     phys = fitc.fit_function(x,priorc)
     return {'result': phys, 'priorc': priorc, 'epi': epi}
 
-def error_budget(s,result):
-    fit = result['fit']
-    prior = fit.prior
-    priorc = result['phys']['priorc']
-    phys = result['phys']['result']
-    statistical = phys.partialsdev(fit.y)
-    input_error = phys.partialsdev(priorc['epi'],prior['aw0'])
-    # compile chiral and discretization lists then splat as function input
-    if s['ansatz']['FV']:
-        X_list = [prior['g0']]
-    else:
-        X_list = []
-    d_list = []
-    n = s['ansatz']['truncation']
-    for k in prior.keys():
-        if (k[0] == 'c' or k[0] == 'b') and int(k[-1]) <= n:
-            X_list.append(prior[k])
-        if (k[0] == 'a' or k[0] == 's') and k[1] != 'w' and int(k[-1]) <= n:
-            d_list.append(prior[k])
-    chiral      = phys.partialsdev(*X_list)
-    disc        = phys.partialsdev(*d_list)
-    err = {'stat': [statistical/phys.mean*100], 'chiral': [chiral/phys.mean*100], 'disc': [disc/phys.mean*100], 'input': [input_error/phys.mean*100], 'total': [phys.sdev/phys.mean*100]}
+def error_budget(s,result_list):
+    err = dict()
+    for ansatz_truncate in s['ansatz']['type']:
+        result = result_list[ansatz_truncate]
+        fit = result['fit']
+        prior = fit.prior
+        priorc = result['phys']['priorc']
+        phys = result['phys']['result']
+        statistical = phys.partialsdev(fit.y)
+        input_error = phys.partialsdev(priorc['epi'],prior['aw0'])
+        # compile chiral and discretization lists then splat as function input
+        if s['ansatz']['FV']:
+            X_list = [prior['g0']]
+        else:
+            X_list = []
+        d_list = []
+        n = int(ansatz_truncate.split('_')[1])
+        for k in prior.keys():
+            if (k[0] == 'c' or k[0] == 'b') and int(k[-1]) <= n:
+                X_list.append(prior[k])
+            if (k[0] == 'a' or k[0] == 's') and k[1] != 'w' and int(k[-1]) <= n:
+                d_list.append(prior[k])
+        chiral      = phys.partialsdev(*X_list)
+        disc        = phys.partialsdev(*d_list)
+        err[ansatz_truncate] = {'stat': [statistical/phys.mean*100], 'chiral': [chiral/phys.mean*100], 'disc': [disc/phys.mean*100], 'input': [input_error/phys.mean*100], 'total': [phys.sdev/phys.mean*100]}
     return err
 
 class plot_chiral_fit():
@@ -252,7 +259,7 @@ class plot_chiral_fit():
         self.plot_params['l3264f211b630m00945m037m440']  = {'abbr': 'a09m350',  'color': '#51a7f9', 'marker': 'p', 'label': ''}
         self.plot_params['l3296f211b630m0074m037m440']   = {'abbr': 'a09m310',  'color': '#51a7f9', 'marker': 's', 'label': '$a\simeq 0.09$~fm'}
         self.plot_params['l4896f211b630m00363m0363m430'] = {'abbr': 'a09m220',  'color': '#51a7f9', 'marker': '^', 'label': ''}
-    def plot_chiral(self,s,data,result):
+    def plot_chiral(self,s,data,result_list):
         # convergence
         def plot_convergence(result,xp):
             fitc = result['fitc']
@@ -346,52 +353,52 @@ class plot_chiral_fit():
         if s['ansatz']['type'] in ['xpt_delta']:
             print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
             return 0
-        fig = plt.figure('chiral extrapolation',figsize=(7,4.326237))
-        ax = plt.axes([0.15,0.15,0.8,0.8])
-        # continuum extrapolation
-        ax, xp = c_continuum(ax,result) # xp is used to make chipt convergence plot
-        # plot chiral extrapolation
-        ax = c_chiral(ax,result)
-        # plot data
-        ax = c_data(ax,s,result)
-        # plot pdg
-        ax = c_pdg(ax,result)
-        # make legend
-        c_legend(ax)
-        # format plot
-        ax.set_ylim([1.075,1.375])
-        ax.set_xlim([0,0.32])
-        ax.set_xlabel('$\epsilon_\pi=m_\pi/(4\pi F_\pi)$', fontsize=20)
-        ax.set_ylabel('$g_A$', fontsize=20)
-        ax.xaxis.set_tick_params(labelsize=16)
-        ax.yaxis.set_tick_params(labelsize=16)
-        self.ax = ax
-        plt.draw()
-        ### Convergence
-        fig = plt.figure('chiral convergence',figsize=(7,4.326237))
-        ax = plt.axes([0.15,0.15,0.8,0.8])
-        ax = plot_convergence(result,xp)
-        # plot physical pion point
-        epi_phys = result['phys']['epi']
-        ax.axvspan(epi_phys.mean-epi_phys.sdev, epi_phys.mean+epi_phys.sdev, alpha=0.4, color='#a6aaa9')
-        ax.axvline(epi_phys.mean,ls='--',color='#a6aaa9')
-        # make legend
-        handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles=handles,loc=3,ncol=2)
-        # format plot
-        ax.set_ylim([1.075,1.375])
-        ax.set_xlim([0,0.32])
-        ax.set_xlabel('$\epsilon_\pi=m_\pi/(4\pi F_\pi)$', fontsize=20)
-        ax.set_ylabel('$g_A$', fontsize=20)
-        ax.xaxis.set_tick_params(labelsize=16)
-        ax.yaxis.set_tick_params(labelsize=16)
-        plt.draw()
-    def plot_continuum(self,s,data,result):
+        for ansatz_truncate in s['ansatz']['type']:
+            result = result_list[ansatz_truncate]
+            fig = plt.figure('%s chiral extrapolation' %ansatz_truncate,figsize=(7,4.326237))
+            ax = plt.axes([0.15,0.15,0.8,0.8])
+            # continuum extrapolation
+            ax, xp = c_continuum(ax,result) # xp is used to make chipt convergence plot
+            # plot chiral extrapolation
+            ax = c_chiral(ax,result)
+            # plot data
+            ax = c_data(ax,s,result)
+            # plot pdg
+            ax = c_pdg(ax,result)
+            # make legend
+            c_legend(ax)
+            # format plot
+            ax.set_ylim([1.075,1.375])
+            ax.set_xlim([0,0.32])
+            ax.set_xlabel('$\epsilon_\pi=m_\pi/(4\pi F_\pi)$', fontsize=20)
+            ax.set_ylabel('$g_A$', fontsize=20)
+            ax.xaxis.set_tick_params(labelsize=16)
+            ax.yaxis.set_tick_params(labelsize=16)
+            self.ax = ax
+            plt.draw()
+            ### Convergence
+            fig = plt.figure('%s chiral convergence' %ansatz_truncate,figsize=(7,4.326237))
+            ax = plt.axes([0.15,0.15,0.8,0.8])
+            ax = plot_convergence(result,xp)
+            # plot physical pion point
+            epi_phys = result['phys']['epi']
+            ax.axvspan(epi_phys.mean-epi_phys.sdev, epi_phys.mean+epi_phys.sdev, alpha=0.4, color='#a6aaa9')
+            ax.axvline(epi_phys.mean,ls='--',color='#a6aaa9')
+            # make legend
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles=handles,loc=3,ncol=2)
+            # format plot
+            ax.set_ylim([1.075,1.375])
+            ax.set_xlim([0,0.32])
+            ax.set_xlabel('$\epsilon_\pi=m_\pi/(4\pi F_\pi)$', fontsize=20)
+            ax.set_ylabel('$g_A$', fontsize=20)
+            ax.xaxis.set_tick_params(labelsize=16)
+            ax.yaxis.set_tick_params(labelsize=16)
+            plt.draw()
+    def plot_continuum(self,s,data,result_list):
         if s['ansatz']['type'] in ['xpt_delta']:
             print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
             return 0
-        fig = plt.figure('continuum extrapolation',figsize=(7,4.326237))
-        ax = plt.axes([0.15,0.15,0.8,0.8])
         def a_chiral(ax,result):
             fit = result['fit']
             fitc = result['fitc']
@@ -467,35 +474,37 @@ class plot_chiral_fit():
             ax.legend(handles=l1,numpoints=1,loc=3,ncol=2)
             plt.gca().add_artist(leg)
             return None
-        # continuum extrapolation
-        ax, res = a_cont(ax,result)
-        # chiral extrapolation
-        ax = a_chiral(ax,result)
-        # plot data
-        ax = a_data(ax,s,result)
-        # plot PDG
-        ax = a_pdg(ax,result)
-        # make legend
-        a_legend(ax)
-        # format plot
-        ax.set_ylim([1.075,1.375])
-        ax.set_xlim([-0.001,0.81/(4*np.pi)])
-        ax.set_xlabel('$\epsilon_a^2=a^2/(4\pi w^2_0)$', fontsize=20)
-        ax.set_ylabel('$g_A$', fontsize=20)
-        ax.xaxis.set_tick_params(labelsize=16)
-        ax.yaxis.set_tick_params(labelsize=16)
-        plt.draw()
-    def plot_volume(self,s,data,result):
+        for ansatz_truncate in s['ansatz']['type']:
+            result = result_list[ansatz_truncate]
+            fig = plt.figure('%s continuum extrapolation' %ansatz_truncate,figsize=(7,4.326237))
+            ax = plt.axes([0.15,0.15,0.8,0.8])
+            # continuum extrapolation
+            ax, res = a_cont(ax,result)
+            # chiral extrapolation
+            ax = a_chiral(ax,result)
+            # plot data
+            ax = a_data(ax,s,result)
+            # plot PDG
+            ax = a_pdg(ax,result)
+            # make legend
+            a_legend(ax)
+            # format plot
+            ax.set_ylim([1.075,1.375])
+            ax.set_xlim([-0.001,0.81/(4*np.pi)])
+            ax.set_xlabel('$\epsilon_a^2=a^2/(4\pi w^2_0)$', fontsize=20)
+            ax.set_ylabel('$g_A$', fontsize=20)
+            ax.xaxis.set_tick_params(labelsize=16)
+            ax.yaxis.set_tick_params(labelsize=16)
+            plt.draw()
+    def plot_volume(self,s,data,result_list):
         if s['ansatz']['type'] in ['xpt_delta']:
             print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
             return 0
         if s['ansatz']['FV']:
-            fig = plt.figure('infinite volume extrapolation',figsize=(7,4.326237))
-            ax = plt.axes([0.15,0.15,0.8,0.8])
-            def v_vol(ax,s,result):
+            def v_vol(ax,s,result,ansatz_truncate):
                 fit = result['fit']
-                ansatz = s['ansatz']['type']
-                truncate = s['ansatz']['truncation']
+                ansatz = ansatz_truncate.split('_')[0]
+                truncate = int(ansatz_truncate.split('_')[1])
                 xsb = s['ansatz']['xsb']
                 alpha = s['ansatz']['alpha']
                 FV = s['ansatz']['FV']
@@ -531,21 +540,25 @@ class plot_chiral_fit():
                 leg = ax.legend(handles=handles,loc=2,ncol=1, fontsize=20,edgecolor='k',fancybox=False)
                 plt.gca().add_artist(leg)
                 return None
-            # plot IV extrapolation
-            ax = v_vol(ax,s,result)
-            # plot data
-            ax = v_data(ax,s,data,result)
-            # plot legend
-            v_legend(ax)
-            # format plot
-            ax.set_ylim([1.22,1.3])
-            ax.set_xlim([0,0.025])
-            ax.set_xlabel('$e^{-m_\pi L}/(m_\pi L)^{1/2}$', fontsize=20)
-            ax.set_ylabel('$g_A$', fontsize=20)
-            ax.yaxis.set_ticks([1.23,1.25,1.27,1.29])
-            ax.xaxis.set_tick_params(labelsize=16)
-            ax.yaxis.set_tick_params(labelsize=16)
-            plt.draw()
+            for ansatz_truncate in s['ansatz']['type']:
+                result = result_list[ansatz_truncate]
+                fig = plt.figure('%s infinite volume extrapolation' %ansatz_truncate,figsize=(7,4.326237))
+                ax = plt.axes([0.15,0.15,0.8,0.8])
+                # plot IV extrapolation
+                ax = v_vol(ax,s,result,ansatz_truncate)
+                # plot data
+                ax = v_data(ax,s,data,result)
+                # plot legend
+                v_legend(ax)
+                # format plot
+                ax.set_ylim([1.22,1.3])
+                ax.set_xlim([0,0.025])
+                ax.set_xlabel('$e^{-m_\pi L}/(m_\pi L)^{1/2}$', fontsize=20)
+                ax.set_ylabel('$g_A$', fontsize=20)
+                ax.yaxis.set_ticks([1.23,1.25,1.27,1.29])
+                ax.xaxis.set_tick_params(labelsize=16)
+                ax.yaxis.set_tick_params(labelsize=16)
+                plt.draw()
         else:
             print('no FV prediction')
 

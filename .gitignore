@@ -6,3 +6,4 @@ build/
 callat_ga_lib.egg-info/
 dist/
 project_ga.egg-info/
+*.pdf
