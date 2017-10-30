@@ -48,9 +48,10 @@ class fit_class():
         self.F3 = -1.5*np.array([np.sum(cn*kn1[i]/mLn[i]) for i in range(len(mL))])
         return None
     def get_priors(self,p,prior):
-        for k in p[self.ansatz].keys():
+        a = self.ansatz.split('-')[0]
+        for k in p[a].keys():
             if int(k[-1]) <= self.n:
-                prior[k] = p[self.ansatz][k]
+                prior[k] = p[a][k]
             else: pass
         return prior
     def dfv(self,p):
@@ -80,7 +81,7 @@ class fit_class():
             r = r[0]
         return r
     def fit_function(self,x,p):
-        if self.ansatz == 'xpt':
+        def nnnlo_analytic_xpt(x,p):
             r = p['g0'] #*np.ones_like(p['epi']) # lo
             if self.n >= 1: # DWF O(a) discretization
                 if self.xsb:
@@ -101,20 +102,24 @@ class fit_class():
                 r += p['epi']**4*p['c4'] # nnnlo epi^4
                 r += p['epi']**2*(p['aw0']**2/(4.*np.pi))*p['b4'] # nnnlo epi^2 a^2
                 r += (p['aw0']**4/(4.*np.pi)**2)*p['a4'] # nnnlo a^4
+            return r
+        def nnnlo_log2_xpt(x,p):
+            r = 0
+            if self.n >= 4:
                 l2  = -16./3*p['g0'] -11./3*p['g0']**3 +16.*p['g0']**5
                 l2 += 4.*(2*p['g0'] + 4**p['g0']**3)
-                r += l2/4. * p['epi']**4 * (np.log(p['epi']**2))**2
-                r += p['gm4'] * p['epi']**4 * np.log(p['epi']**2)
+                r = l2/4. * p['epi']**4 * (np.log(p['epi']**2))**2
             return r
-        elif self.ansatz == 'xpt_delta':
-            r = p['g0']
-            if self.n >= 1: # DWF O(a) discretization
-                if self.xsb:
-                    r += p['a1']*p['aw0']
-            if self.n >= 2: # nlo
-                g2  = p['g0'] +2.*p['g0']**3 # nucleon terms
-                g2 += p['gnd0']**2 *(2.*p['g0'] / 9 +50.*p['gdd0'] / 81) #delta
-                r  += -1.*g2 * p['epi']**2 * np.log(p['epi']**2)
+        def nnnlo_log_xpt(x,p):
+            r = 0
+            if self.n >= 4:
+                r = p['gm4'] * p['epi']**4 * np.log(p['epi']**2)
+            return r
+        def nlo_delta_xpt(x,p):
+            r = 0
+            if self.n >= 2:
+                g2 = p['gnd0']**2 *(2.*p['g0'] / 9 +50.*p['gdd0'] / 81) #delta
+                r  = -1.*g2 * p['epi']**2 * np.log(p['epi']**2)
                 # extra delta terms
                 g2r  = p['gnd0']**2 * p['epi']**2 * 32.*p['g0'] / 27
                 g2r += p['gnd0']**2 * p['ed']**2 * (76.*p['g0']/27 +100.*p['gdd0']/81)
@@ -124,20 +129,22 @@ class fit_class():
                 r   += -1.*g2d * p['ed']**2 * np.log(4.*p['ed']**2 / p['epi']**2)
                 # delta mpi^3 term
                 r   += 32.*np.pi / 27 * p['g0']*p['gnd0']**2 * p['epi']**3 / p['ed']
-                # counter terms
-                r += p['epi']**2*p['c2'] # nlo counter term
-                r += (p['aw0']**2/(4.*np.pi))*p['a2'] # nlo discretization
-                if self.alpha:
-                    r += x['afs']*(p['aw0']/(4.*np.pi))**2*p['s2'] # nlo alpha_s a^2
-                if self.FV:# For now - just using nucleon FV function
-                    r += self.dfv(p)
-            # new terms do not include explicit delta
-            if self.n >= 3: # nnlo
-                r += p['g0']*p['c3']*p['epi']**3 # nnlo log
-            if self.n >= 4: # nnnlo analytic terms
-                r += p['epi']**4*p['c4'] # nnnlo epi^4
-                r += p['epi']**2*(p['aw0']**2/(4.*np.pi))*p['b4'] # nnnlo epi^2 a^2
-                r += (p['aw0']**4/(4.*np.pi)**2)*p['a4'] # nnnlo a^4
+            return r
+        if self.ansatz == 'xpt':
+            r = nnnlo_analytic_xpt(x,p)
+            return r
+        elif self.ansatz == 'xpt-doublelog':
+            r = nnnlo_analytic_xpt(x,p)
+            r += nnnlo_log2_xpt(x,p)
+            return r
+        elif self.ansatz == 'xpt-full':
+            r = nnnlo_analytic_xpt(x,p)
+            r += nnnlo_log2_xpt(x,p)
+            r += nnnlo_log_xpt(x,p)
+            return r
+        elif self.ansatz == 'xpt-delta':
+            r = nnnlo_analytic_xpt(x,p)
+            r += nlo_delta_xpt(x,p)
             return r
         elif self.ansatz == 'taylor':
             r = p['c0']
@@ -350,10 +357,10 @@ class plot_chiral_fit():
             plt.gca().add_artist(leg)
             return None
         ### Chiral extrapolation
-        if s['ansatz']['type'] in ['xpt_delta']:
-            print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
-            return 0
         for ansatz_truncate in s['ansatz']['type']:
+            if ansatz_truncate.split('_')[0] in ['xpt-delta']:
+                print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
+                continue
             result = result_list[ansatz_truncate]
             fig = plt.figure('%s chiral extrapolation' %ansatz_truncate,figsize=(7,4.326237))
             ax = plt.axes([0.15,0.15,0.8,0.8])
@@ -396,9 +403,6 @@ class plot_chiral_fit():
             ax.yaxis.set_tick_params(labelsize=16)
             plt.draw()
     def plot_continuum(self,s,data,result_list):
-        if s['ansatz']['type'] in ['xpt_delta']:
-            print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
-            return 0
         def a_chiral(ax,result):
             fit = result['fit']
             fitc = result['fitc']
@@ -475,6 +479,9 @@ class plot_chiral_fit():
             plt.gca().add_artist(leg)
             return None
         for ansatz_truncate in s['ansatz']['type']:
+            if ansatz_truncate.split('_')[0] in ['xpt-delta']:
+                print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
+                continue
             result = result_list[ansatz_truncate]
             fig = plt.figure('%s continuum extrapolation' %ansatz_truncate,figsize=(7,4.326237))
             ax = plt.axes([0.15,0.15,0.8,0.8])
@@ -497,9 +504,6 @@ class plot_chiral_fit():
             ax.yaxis.set_tick_params(labelsize=16)
             plt.draw()
     def plot_volume(self,s,data,result_list):
-        if s['ansatz']['type'] in ['xpt_delta']:
-            print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
-            return 0
         if s['ansatz']['FV']:
             def v_vol(ax,s,result,ansatz_truncate):
                 fit = result['fit']
@@ -541,6 +545,9 @@ class plot_chiral_fit():
                 plt.gca().add_artist(leg)
                 return None
             for ansatz_truncate in s['ansatz']['type']:
+                if ansatz_truncate.split('_')[0] in ['xpt-delta']:
+                    print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
+                    continue
                 result = result_list[ansatz_truncate]
                 fig = plt.figure('%s infinite volume extrapolation' %ansatz_truncate,figsize=(7,4.326237))
                 ax = plt.axes([0.15,0.15,0.8,0.8])
