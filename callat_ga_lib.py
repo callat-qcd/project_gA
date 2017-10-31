@@ -266,6 +266,11 @@ class plot_chiral_fit():
         self.plot_params['l3264f211b630m00945m037m440']  = {'abbr': 'a09m350',  'color': '#51a7f9', 'marker': 'p', 'label': ''}
         self.plot_params['l3296f211b630m0074m037m440']   = {'abbr': 'a09m310',  'color': '#51a7f9', 'marker': 's', 'label': '$a\simeq 0.09$~fm'}
         self.plot_params['l4896f211b630m00363m0363m430'] = {'abbr': 'a09m220',  'color': '#51a7f9', 'marker': '^', 'label': ''}
+        self.title = {
+            'xpt_4':r'N3LO $\chi$PT','xpt_3':r'NNLO $\chi$PT',
+            'taylor_2':r'NLO Taylor $\epsilon_\pi^2$','taylor_4':r'NNLO Taylor $\epsilon_\pi^2$',
+            'linear_2':r'NLO Taylor $\epsilon_\pi$','linear_4':r'NNLO Taylor $\epsilon_\pi$'
+            }
     def plot_chiral(self,s,data,result_list):
         # convergence
         def plot_convergence(result,xp):
@@ -381,7 +386,10 @@ class plot_chiral_fit():
             ax.set_ylabel('$g_A$', fontsize=20)
             ax.xaxis.set_tick_params(labelsize=16)
             ax.yaxis.set_tick_params(labelsize=16)
+            ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             self.ax = ax
+            if s['save_figs']:
+                plt.savefig('chiral_'+ansatz_truncate+'.pdf',transparent=True)
             plt.draw()
             ### Convergence
             fig = plt.figure('%s chiral convergence' %ansatz_truncate,figsize=(7,4.326237))
@@ -401,6 +409,9 @@ class plot_chiral_fit():
             ax.set_ylabel('$g_A$', fontsize=20)
             ax.xaxis.set_tick_params(labelsize=16)
             ax.yaxis.set_tick_params(labelsize=16)
+            ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+            if s['save_figs']:
+                plt.savefig('convergence_'+ansatz_truncate+'.pdf',transparent=True)
             plt.draw()
     def plot_continuum(self,s,data,result_list):
         def a_chiral(ax,result):
@@ -502,6 +513,9 @@ class plot_chiral_fit():
             ax.set_ylabel('$g_A$', fontsize=20)
             ax.xaxis.set_tick_params(labelsize=16)
             ax.yaxis.set_tick_params(labelsize=16)
+            ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+            if s['save_figs']:
+                plt.savefig('continuum_'+ansatz_truncate+'.pdf',transparent=True)
             plt.draw()
     def plot_volume(self,s,data,result_list):
         if s['ansatz']['FV']:
@@ -565,6 +579,9 @@ class plot_chiral_fit():
                 ax.yaxis.set_ticks([1.23,1.25,1.27,1.29])
                 ax.xaxis.set_tick_params(labelsize=16)
                 ax.yaxis.set_tick_params(labelsize=16)
+                ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'right'},x=0.95,y=0.1)
+                if s['save_figs']:
+                    plt.savefig('volume_'+ansatz_truncate+'.pdf',transparent=True)
                 plt.draw()
         else:
             print('no FV prediction')
