@@ -586,5 +586,13 @@ class plot_chiral_fit():
         else:
             print('no FV prediction')
 
+def plot_histogram(x,ysum,ydict):
+    fig = plt.figure('result histogram',figsize=(7,4.326237))
+    ax = plt.axes([0.15,0.15,0.8,0.8])
+    ax.errorbar(x=x,y=ysum,ls='-')
+    for a in ydict.keys():
+        ax.errorbar(x=x,y=ydict[a],ls='--')
+    plt.draw()
+
 if __name__=='__main__':
     print("chipt library")
