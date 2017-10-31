@@ -249,6 +249,7 @@ def error_budget(s,result_list):
 
 class plot_chiral_fit():
     def __init__(self):
+        self.loc = './plots'
         self.plot_params = dict()
         self.plot_params['l1648f211b580m0217m065m838']  = {'abbr': 'a15m400',  'color': '#ec5d57', 'marker': 'h', 'label': ''}
         self.plot_params['l1648f211b580m0166m065m838']  = {'abbr': 'a15m350',  'color': '#ec5d57', 'marker': 'p', 'label': ''}
@@ -389,7 +390,7 @@ class plot_chiral_fit():
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             self.ax = ax
             if s['save_figs']:
-                plt.savefig('chiral_'+ansatz_truncate+'.pdf',transparent=True)
+                plt.savefig('%s/chiral_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
             ### Convergence
             fig = plt.figure('%s chiral convergence' %ansatz_truncate,figsize=(7,4.326237))
@@ -411,7 +412,7 @@ class plot_chiral_fit():
             ax.yaxis.set_tick_params(labelsize=16)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             if s['save_figs']:
-                plt.savefig('convergence_'+ansatz_truncate+'.pdf',transparent=True)
+                plt.savefig('%s/convergence_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
     def plot_continuum(self,s,data,result_list):
         def a_chiral(ax,result):
@@ -515,7 +516,7 @@ class plot_chiral_fit():
             ax.yaxis.set_tick_params(labelsize=16)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             if s['save_figs']:
-                plt.savefig('continuum_'+ansatz_truncate+'.pdf',transparent=True)
+                plt.savefig('%s/continuum_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
     def plot_volume(self,s,data,result_list):
         if s['ansatz']['FV']:
@@ -581,18 +582,19 @@ class plot_chiral_fit():
                 ax.yaxis.set_tick_params(labelsize=16)
                 ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'right'},x=0.95,y=0.1)
                 if s['save_figs']:
-                    plt.savefig('volume_'+ansatz_truncate+'.pdf',transparent=True)
+                    plt.savefig('%s/volume_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
                 plt.draw()
         else:
             print('no FV prediction')
-
-def plot_histogram(x,ysum,ydict):
-    fig = plt.figure('result histogram',figsize=(7,4.326237))
-    ax = plt.axes([0.15,0.15,0.8,0.8])
-    ax.errorbar(x=x,y=ysum,ls='-')
-    for a in ydict.keys():
-        ax.errorbar(x=x,y=ydict[a],ls='--')
-    plt.draw()
+    def plot_histogram(self,s,x,ysum,ydict):
+        fig = plt.figure('result histogram',figsize=(7,4.326237))
+        ax = plt.axes([0.15,0.15,0.8,0.8])
+        ax.errorbar(x=x,y=ysum,ls='-')
+        for a in ydict.keys():
+            ax.errorbar(x=x,y=ydict[a],ls='--')
+        if s['save_figs']:
+            plt.savefig('%s/model_avg_histogram.pdf' %(self.loc),transparent=True)
+        plt.draw()
 
 if __name__=='__main__':
     print("chipt library")
