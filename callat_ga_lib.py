@@ -586,12 +586,41 @@ class plot_chiral_fit():
                 plt.draw()
         else:
             print('no FV prediction')
-    def plot_histogram(self,s,x,ysum,ydict):
+    def plot_histogram(self,s,x,ysum,ydict,cdf):
+        # '-','--','-.',':'
+        # #ec5d57 #70bf41 #51a7f9
+        p = dict()
+        p['taylor_2'] = {'color':'#ec5d57','ls':'--','tag':'NLO Taylor $\epsilon_\pi^2$'}
+        p['taylor_4'] = {'color':'#ec5d57','ls':':','tag':'NNLO Taylor $\epsilon_\pi^2$'}
+        p['xpt_3']    = {'color':'#70bf41','ls':'--','tag':'NNLO $\chi$PT'}
+        p['xpt_4']    = {'color':'#70bf41','ls':':','tag':'N3LO $\chi$PT'}
+        p['linear_2'] = {'color':'#51a7f9','ls':'--','tag':'NLO Taylor $\epsilon_\pi$'}
+        p['linear_4'] = {'color':'#51a7f9','ls':':','tag':'NNLO Taylor $\epsilon_\pi$'}
         fig = plt.figure('result histogram',figsize=(7,4.326237))
         ax = plt.axes([0.15,0.15,0.8,0.8])
-        ax.errorbar(x=x,y=ysum,ls='-')
+        ax.fill_between(x=x,y1=ysum,facecolor='#b36ae2',edgecolor='black',alpha=0.4,label='model average')
+        # get 95% confidence
+        lidx95 = abs(cdf-0.025).argmin()
+        uidx95 = abs(cdf-0.975).argmin()
+        ax.fill_between(x=x[lidx95:uidx95],y1=ysum[lidx95:uidx95],facecolor='#b36ae2',edgecolor='black',alpha=0.4)
+        # get 68% confidence
+        lidx68 = abs(cdf-0.158655254).argmin()
+        uidx68 = abs(cdf-0.841344746).argmin()
+        ax.fill_between(x=x[lidx68:uidx68],y1=ysum[lidx68:uidx68],facecolor='#b36ae2',edgecolor='black',alpha=0.4)
+        # plot black curve over
+        ax.errorbar(x=[x[lidx95],x[lidx95]],y=[0,ysum[lidx95]],color='black',lw=2)
+        ax.errorbar(x=[x[uidx95],x[uidx95]],y=[0,ysum[uidx95]],color='black',lw=2)
+        ax.errorbar(x=[x[lidx68],x[lidx68]],y=[0,ysum[lidx68]],color='black',lw=2)
+        ax.errorbar(x=[x[uidx68],x[uidx68]],y=[0,ysum[uidx68]],color='black',lw=2)
+        ax.errorbar(x=x,y=ysum,ls='-',color='black')
         for a in ydict.keys():
-            ax.errorbar(x=x,y=ydict[a],ls='--')
+            ax.errorbar(x=x,y=ydict[a],ls=p[a]['ls'],color=p[a]['color'],label=p[a]['tag'],lw=2)
+        ax.legend(fontsize=16,edgecolor='k',fancybox=False)
+        ax.set_ylim(bottom=0)
+        ax.set_xlim([1.225,1.335])
+        frame = plt.gca()
+        frame.axes.get_yaxis().set_visible(False)
+        ax.xaxis.set_tick_params(labelsize=16)
         if s['save_figs']:
             plt.savefig('%s/model_avg_histogram.pdf' %(self.loc),transparent=True)
         plt.draw()
