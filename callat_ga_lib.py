@@ -582,12 +582,18 @@ class plot_chiral_fit():
             def v_data(ax,s,data,result):
                 x = data['mpl']
                 y = result['fit'].y
+                xlist = []
+                ylist = []
+                elist = []
                 for i,e in enumerate(s['ensembles']):
                     if e in ['l2464f211b600m00507m0507m628','l3264f211b600m00507m0507m628','l4064f211b600m00507m0507m628']:
                         xplot = np.exp(-x[i])/np.sqrt(x[i])
                         ax.errorbar(x=xplot,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
+                        xlist.append(xplot)
+                        ylist.append(y[i])
+                        elist.append(e)
                     else: pass
-                return ax
+                return ax, {'x':np.array(xlist),'y':np.array(ylist),'ens':np.array(elist)}
             def v_legend(ax):
                 handles, labels = ax.get_legend_handles_labels()
                 leg = ax.legend(handles=handles,loc=2,ncol=1, fontsize=20,edgecolor='k',fancybox=False)
@@ -602,10 +608,10 @@ class plot_chiral_fit():
                 fig = plt.figure('%s infinite volume extrapolation' %ansatz_truncate,figsize=(7,4.326237))
                 ax = plt.axes([0.15,0.15,0.8,0.8])
                 # plot IV extrapolation
-                ax, r = v_vol(ax,s,result,ansatz_truncate)
-                r_fv[ansatz_truncate] = r
+                ax, r0 = v_vol(ax,s,result,ansatz_truncate)
                 # plot data
-                ax = v_data(ax,s,data,result)
+                ax, rd = v_data(ax,s,data,result)
+                r_fv[ansatz_truncate] = {'r0':r0,'rd':rd}
                 # plot legend
                 v_legend(ax)
                 # format plot
@@ -620,7 +626,7 @@ class plot_chiral_fit():
                 if s['save_figs']:
                     plt.savefig('%s/volume_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
                 plt.draw()
-            return r
+            return r_fv
         else:
             print('no FV prediction')
     def plot_histogram(self,s,x,ysum,ydict,cdf):
@@ -716,7 +722,7 @@ class plot_chiral_fit():
         if s['save_figs']:
             plt.savefig('%s/chiral_modelavg.pdf' %(self.loc),transparent=True)
         plt.draw()
-    def model_avg_cont(self,s,phys,wd,r_cont):
+    def model_avg_cont(self,s,wd,r_cont):
         # model average
         y = 0
         ym = {0:0,1:0,2:0,3:0,4:0}
@@ -768,6 +774,42 @@ class plot_chiral_fit():
         ax.set_title('model average',fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
         if s['save_figs']:
             plt.savefig('%s/cont_modelavg.pdf' %(self.loc),transparent=True)
+        plt.draw()
+    def model_avg_fv(self,s,wd,r_fv):
+        # model average
+        y = 0
+        ym = {0:0,1:0,2:0,3:0,4:0}
+        d = 0
+        for k in wd.keys():
+            y += wd[k]*r_fv[k]['r0']['y']
+            d += wd[k]*r_fv[k]['rd']['y']
+        # plot
+        fig = plt.figure('model average volume extrapolation',figsize=(7,4.326237))
+        ax = plt.axes([0.15,0.15,0.8,0.8])
+        # infinite volume extrapolation
+        l_extrap = r_fv[k]['r0']['mpiL_extrap_plot']
+        mean = np.array([i.mean for i in y])
+        sdev = np.array([i.sdev for i in y])
+        ax.fill_between(l_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#70bf41')
+        ax.errorbar(x=l_extrap,y=mean,ls='--',marker='',elinewidth=1,color='#70bf41',label='NLO $\chi$PT prediction')
+        # data
+        for i,e in enumerate(r_fv[k]['rd']['ens']):
+            ax.errorbar(x=r_fv[k]['rd']['x'][i],y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'])
+        # legend
+        handles, labels = ax.get_legend_handles_labels()
+        leg = ax.legend(handles=handles,loc=2,ncol=1, fontsize=20,edgecolor='k',fancybox=False)
+        plt.gca().add_artist(leg)
+        # settings
+        ax.set_ylim([1.22,1.3])
+        ax.set_xlim([0,0.025])
+        ax.set_xlabel('$e^{-m_\pi L}/(m_\pi L)^{1/2}$', fontsize=20)
+        ax.set_ylabel('$g_A$', fontsize=20)
+        ax.yaxis.set_ticks([1.23,1.25,1.27,1.29])
+        ax.xaxis.set_tick_params(labelsize=16)
+        ax.yaxis.set_tick_params(labelsize=16)
+        ax.set_title('model average',fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+        if s['save_figs']:
+            plt.savefig('%s/fv_modelavg.pdf' %(self.loc),transparent=True)
         plt.draw()
 if __name__=='__main__':
     print("chipt library")
