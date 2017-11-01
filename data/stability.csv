@@ -17,9 +17,9 @@ False,$m_\pi\leq$ 310, 1.295072, 0.016277, -10, -10
 False,$m_\pi\geq$ 220, 1.270389, 0.010661, -10, -10
 break
 False,2xLO width, 1.273161, 0.011790, -10, -10
-False,+2xNLO width, 1.272082, 0.011301, -10, -10
+False,+2xNLO width, 1.272271, 0.011396, -10, -10
 False,+2xNNLO width, 1.271818, 0.011891, -10, -10
-False,$\mathrm{O}(10)$ NNNLOa, 1.270580, 0.010990, -10, -10
-False,+$\mathrm{O}(\alpha_s a^2)$ disc., 1.271818, 0.011891, -10, -10
-False,+$\mathrm{O}(a)$ disc., 1.271818, 0.011891, -10, -10
+False,$\mathrm{O}(10)$ NNNLOa, 1.271031, 0.011604, -10, -10
+False,+$\mathrm{O}(\alpha_s a^2)$ disc., 1.271031, 0.011604, -10, -10
+False,+$\mathrm{O}(a)$ disc., 1.271031, 0.011604, -10, -10
 False,omit NLO FV, 1.273462, 0.011756, -10, -10
