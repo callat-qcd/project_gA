@@ -268,33 +268,43 @@ class plot_chiral_fit():
         self.plot_params['l3296f211b630m0074m037m440']   = {'abbr': 'a09m310',  'color': '#51a7f9', 'marker': 's', 'label': '$a\simeq 0.09$~fm'}
         self.plot_params['l4896f211b630m00363m0363m430'] = {'abbr': 'a09m220',  'color': '#51a7f9', 'marker': '^', 'label': ''}
         self.title = {
-            'xpt_4':r'NNLO $\chi$PT + ct','xpt_3':r'NNLO $\chi$PT',
+            'xpt_4':r'NNLO+ct $\chi$PT','xpt_3':r'NNLO $\chi$PT',
             'xpt-full_4':r'N3LO $\chi$PT',
             'taylor_2':r'NLO Taylor $\epsilon_\pi^2$','taylor_4':r'NNLO Taylor $\epsilon_\pi^2$',
             'linear_2':r'NLO Taylor $\epsilon_\pi$','linear_4':r'NNLO Taylor $\epsilon_\pi$'
             }
     def plot_chiral(self,s,data,result_list):
         # convergence
-        def plot_convergence(result,xp):
+        def plot_convergence(result,xp,ansatz):
             fitc = result['fitc']
+            init_order = fitc.n
             x = xp['x']
             priorx = xp['priorx']
-            tn = fitc.n
+            if ansatz in ['taylor','linear']:
+                tn = fitc.n//2+1
+                order = np.zeros(tn)
+                order[0] = 1
+                for i in range(1,tn):
+                    order[i] = 2*i
+            else:
+                tn = fitc.n
+                order = range(1,tn+1)
             ls_list = ['-','--','-.',':']
             label = ['LO','NLO','NNLO','N3LO']
             phys_converge = []
-            for n in range(1,tn+1):
-                fitc.n = n
+            for n in range(tn):
+                fitc.n = order[n]
                 extrap = fitc.fit_function(x,priorx)
                 # print numerical breakdown
                 converge_prior = dict(priorx)
                 converge_prior['epi'] = result['phys']['epi']
                 phys_converge.append(fitc.fit_function(x,converge_prior))
-                if n == 1:
+                if n == 0:
                     extrap = [extrap for i in range(len(priorx['epi']))]
                 mean = np.array([i.mean for i in extrap])
                 sdev = np.array([i.sdev for i in extrap])
-                ax.fill_between(priorx['epi'],mean+sdev,mean-sdev,alpha=0.4,label=label[n-1])
+                ax.fill_between(priorx['epi'],mean+sdev,mean-sdev,alpha=0.4,label=label[n])
+            fitc.n = init_order
             return ax
         # chiral extrapolation
         def c_chiral(ax,result):
@@ -407,7 +417,7 @@ class plot_chiral_fit():
             ### Convergence
             fig = plt.figure('%s chiral convergence' %ansatz_truncate,figsize=(7,4.326237))
             ax = plt.axes([0.15,0.15,0.8,0.8])
-            ax = plot_convergence(result,xp)
+            ax = plot_convergence(result,xp,ansatz_truncate.split('_')[0])
             # plot physical pion point
             epi_phys = result['phys']['epi']
             ax.axvspan(epi_phys.mean-epi_phys.sdev, epi_phys.mean+epi_phys.sdev, alpha=0.4, color='#a6aaa9')
