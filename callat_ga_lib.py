@@ -268,7 +268,8 @@ class plot_chiral_fit():
         self.plot_params['l3296f211b630m0074m037m440']   = {'abbr': 'a09m310',  'color': '#51a7f9', 'marker': 's', 'label': '$a\simeq 0.09$~fm'}
         self.plot_params['l4896f211b630m00363m0363m430'] = {'abbr': 'a09m220',  'color': '#51a7f9', 'marker': '^', 'label': ''}
         self.title = {
-            'xpt_4':r'N3LO $\chi$PT','xpt_3':r'NNLO $\chi$PT',
+            'xpt_4':r'NNLO $\chi$PT + ct','xpt_3':r'NNLO $\chi$PT',
+            'xpt-full_4':r'N3LO $\chi$PT',
             'taylor_2':r'NLO Taylor $\epsilon_\pi^2$','taylor_4':r'NNLO Taylor $\epsilon_\pi^2$',
             'linear_2':r'NLO Taylor $\epsilon_\pi$','linear_4':r'NNLO Taylor $\epsilon_\pi$'
             }
