@@ -292,8 +292,9 @@ class plot_chiral_fit():
                 phys_converge.append(fitc.fit_function(x,converge_prior))
                 if n == 1:
                     extrap = [extrap for i in range(len(priorx['epi']))]
-                mean = [i.mean for i in extrap]
-                ax.errorbar(x=priorx['epi'],y=mean,ls=ls_list[n-1],marker='',color='black',label=label[n-1])
+                mean = np.array([i.mean for i in extrap])
+                sdev = np.array([i.sdev for i in extrap])
+                ax.fill_between(priorx['epi'],mean+sdev,mean-sdev,alpha=0.4,label=label[n-1])
             return ax
         # chiral extrapolation
         def c_chiral(ax,result):
@@ -441,6 +442,7 @@ class plot_chiral_fit():
             color = ['black','black','black','black','black']
             dashes = [8, 4, 2, 4, 2, 4]
             fitc.FV = False
+            rm = dict()
             for i in range(len(epi_list)):
                 x = {'afs': 0}
                 priorx = dict()
@@ -457,7 +459,8 @@ class plot_chiral_fit():
                     ax.errorbar(x=aw0_extrap_plot,y=[j.mean for j in extrap],ls=ls_list[i],dashes=dashes,marker='',elinewidth=1,color=color[i],label=label[i])
                 else:
                     ax.errorbar(x=aw0_extrap_plot,y=[j.mean for j in extrap],ls=ls_list[i],marker='',elinewidth=1,color=color[i],label=label[i])
-            return ax, {'aw0_extrap_plot':aw0_extrap_plot,'y':extrap}
+                rm[i] = extrap
+            return ax, rm
         def a_cont(ax,result):
             fit = result['fit']
             fitc = result['fitc']
@@ -486,10 +489,16 @@ class plot_chiral_fit():
                 y = result['fit'].y - result['fitc'].dfv(result['fit'].p)
             else:
                 y = result['fit'].y
+            xlist = []
+            ylist = []
+            elist = []
             for i,e in enumerate(s['ensembles']):
                 xplot = x[i]**2/(4.*np.pi)
                 ax.errorbar(x=xplot.mean,xerr=xplot.sdev,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'])
-            return ax
+                xlist.append(xplot)
+                ylist.append(y[i])
+                elist.append(e)
+            return ax, {'x':np.array(xlist),'y':np.array(ylist),'ens':np.array(elist)}
         def a_pdg(ax,result):
             gA_pdg = [1.2723, 0.0023]
             ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
@@ -513,10 +522,10 @@ class plot_chiral_fit():
             # continuum extrapolation
             ax, res, r0 = a_cont(ax,result)
             # chiral extrapolation
-            ax, ra = a_chiral(ax,result)
-            r_cont[ansatz_truncate] = {'r0':r0,'ra':ra}
+            ax, rm = a_chiral(ax,result)
             # plot data
-            ax = a_data(ax,s,result)
+            ax, rd = a_data(ax,s,result)
+            r_cont[ansatz_truncate] = {'r0':r0,'rm':rm,'rd':rd}
             # plot PDG
             ax = a_pdg(ax,result)
             # make legend
@@ -642,7 +651,7 @@ class plot_chiral_fit():
         if s['save_figs']:
             plt.savefig('%s/model_avg_histogram.pdf' %(self.loc),transparent=True)
         plt.draw()
-    def model_avg_extrap(self,s,phys,wd,r_chiral):
+    def model_avg_chiral(self,s,phys,wd,r_chiral):
         # model average
         y = 0
         ya = {0:0,1:0,2:0}
@@ -675,10 +684,10 @@ class plot_chiral_fit():
             ax.errorbar(x=r_chiral[k]['r0']['epi'],y=[j.mean for j in ya[i]],ls='-',marker='',elinewidth=1,color=color_list[idx],label=label[idx])
         # data
         for i,e in enumerate(r_chiral[k]['rd']['ens']):
-            ax.errorbar(x=r_chiral[k]['rd']['x'][i].mean,y=d[i].mean,yerr=d[i].sdev,ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
+            ax.errorbar(x=r_chiral[k]['rd']['x'][i].mean,y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
         # pdg
         gA_pdg = [1.2723, 0.0023]
-        ax.errorbar(x=epi_phys.mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
+        ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
         # legend
         handles, labels = ax.get_legend_handles_labels()
         l0 = [handles[0],handles[-1]]
@@ -696,6 +705,59 @@ class plot_chiral_fit():
         ax.set_title('model average',fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
         if s['save_figs']:
             plt.savefig('%s/chiral_modelavg.pdf' %(self.loc),transparent=True)
+        plt.draw()
+    def model_avg_cont(self,s,phys,wd,r_cont):
+        # model average
+        y = 0
+        ym = {0:0,1:0,2:0,3:0,4:0}
+        d = 0
+        for k in wd.keys():
+            y += wd[k]*r_cont[k]['r0']['y']
+            d += wd[k]*r_cont[k]['rd']['y']
+            for a in r_cont[k]['rm'].keys():
+                ym[a] += wd[k]*r_cont[k]['rm'][a]
+        # plot
+        fig = plt.figure('model average chiral extrapolation',figsize=(7,4.326237))
+        ax = plt.axes([0.15,0.15,0.8,0.8])
+        # physical pion mass extrap
+        a_extrap = r_cont[k]['r0']['aw0_extrap_plot']
+        mean = np.array([i.mean for i in y])
+        sdev = np.array([i.sdev for i in y])
+        ax.fill_between(a_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi^{phys.},\epsilon_a)$')
+        ax.errorbar(x=a_extrap,y=mean,ls='--',marker='',elinewidth=1,color='#b36ae2')
+        # unphysical pion masses
+        ls_list = ['-','--','-.',':','-']
+        label = ['$g_A(\epsilon^{(130)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(220)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(310)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(350)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(400)}_\pi,\epsilon_a)$']
+        color = ['black','black','black','black','black']
+        dashes = [8, 4, 2, 4, 2, 4]
+        for idx,i in enumerate(r_cont[k]['rm'].keys()):
+            if i == 4:
+                ax.errorbar(x=a_extrap,y=[j.mean for j in ym[i]],ls=ls_list[idx],dashes=dashes,marker='',elinewidth=1,color=color[idx],label=label[idx])
+            else:
+                ax.errorbar(x=a_extrap,y=[j.mean for j in ym[i]],ls=ls_list[idx],marker='',elinewidth=1,color=color[idx],label=label[idx])
+        # data
+        for i,e in enumerate(r_cont[k]['rd']['ens']):
+            ax.errorbar(x=r_cont[k]['rd']['x'][i].mean,y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'])
+        # pdg
+        gA_pdg = [1.2723, 0.0023]
+        ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
+        # legend
+        handles, labels = ax.get_legend_handles_labels()
+        l0 = [handles[0],handles[-1]]
+        l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
+        leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1)
+        ax.legend(handles=l1,numpoints=1,loc=3,ncol=2)
+        plt.gca().add_artist(leg)
+        # settings
+        ax.set_ylim([1.075,1.375])
+        ax.set_xlim([-0.001,0.81/(4*np.pi)])
+        ax.set_xlabel('$\epsilon_a^2=a^2/(4\pi w^2_0)$', fontsize=20)
+        ax.set_ylabel('$g_A$', fontsize=20)
+        ax.xaxis.set_tick_params(labelsize=16)
+        ax.yaxis.set_tick_params(labelsize=16)
+        ax.set_title('model average',fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+        if s['save_figs']:
+            plt.savefig('%s/cont_modelavg.pdf' %(self.loc),transparent=True)
         plt.draw()
 if __name__=='__main__':
     print("chipt library")
