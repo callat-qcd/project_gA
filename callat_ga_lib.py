@@ -249,6 +249,7 @@ def error_budget(s,result_list):
 
 class plot_chiral_fit():
     def __init__(self):
+        self.loc = './plots'
         self.plot_params = dict()
         self.plot_params['l1648f211b580m0217m065m838']  = {'abbr': 'a15m400',  'color': '#ec5d57', 'marker': 'h', 'label': ''}
         self.plot_params['l1648f211b580m0166m065m838']  = {'abbr': 'a15m350',  'color': '#ec5d57', 'marker': 'p', 'label': ''}
@@ -389,7 +390,7 @@ class plot_chiral_fit():
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             self.ax = ax
             if s['save_figs']:
-                plt.savefig('chiral_'+ansatz_truncate+'.pdf',transparent=True)
+                plt.savefig('%s/chiral_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
             ### Convergence
             fig = plt.figure('%s chiral convergence' %ansatz_truncate,figsize=(7,4.326237))
@@ -411,7 +412,7 @@ class plot_chiral_fit():
             ax.yaxis.set_tick_params(labelsize=16)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             if s['save_figs']:
-                plt.savefig('convergence_'+ansatz_truncate+'.pdf',transparent=True)
+                plt.savefig('%s/convergence_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
     def plot_continuum(self,s,data,result_list):
         def a_chiral(ax,result):
@@ -515,7 +516,7 @@ class plot_chiral_fit():
             ax.yaxis.set_tick_params(labelsize=16)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             if s['save_figs']:
-                plt.savefig('continuum_'+ansatz_truncate+'.pdf',transparent=True)
+                plt.savefig('%s/continuum_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
     def plot_volume(self,s,data,result_list):
         if s['ansatz']['FV']:
@@ -581,18 +582,48 @@ class plot_chiral_fit():
                 ax.yaxis.set_tick_params(labelsize=16)
                 ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'right'},x=0.95,y=0.1)
                 if s['save_figs']:
-                    plt.savefig('volume_'+ansatz_truncate+'.pdf',transparent=True)
+                    plt.savefig('%s/volume_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
                 plt.draw()
         else:
             print('no FV prediction')
-
-def plot_histogram(x,ysum,ydict):
-    fig = plt.figure('result histogram',figsize=(7,4.326237))
-    ax = plt.axes([0.15,0.15,0.8,0.8])
-    ax.errorbar(x=x,y=ysum,ls='-')
-    for a in ydict.keys():
-        ax.errorbar(x=x,y=ydict[a],ls='--')
-    plt.draw()
+    def plot_histogram(self,s,x,ysum,ydict,cdf):
+        # '-','--','-.',':'
+        # #ec5d57 #70bf41 #51a7f9
+        p = dict()
+        p['taylor_2'] = {'color':'#ec5d57','ls':'--','tag':'NLO Taylor $\epsilon_\pi^2$'}
+        p['taylor_4'] = {'color':'#ec5d57','ls':':','tag':'NNLO Taylor $\epsilon_\pi^2$'}
+        p['xpt_3']    = {'color':'#70bf41','ls':'--','tag':'NNLO $\chi$PT'}
+        p['xpt_4']    = {'color':'#70bf41','ls':':','tag':'N3LO $\chi$PT'}
+        p['linear_2'] = {'color':'#51a7f9','ls':'--','tag':'NLO Taylor $\epsilon_\pi$'}
+        p['linear_4'] = {'color':'#51a7f9','ls':':','tag':'NNLO Taylor $\epsilon_\pi$'}
+        fig = plt.figure('result histogram',figsize=(7,4.326237))
+        ax = plt.axes([0.15,0.15,0.8,0.8])
+        ax.fill_between(x=x,y1=ysum,facecolor='#b36ae2',edgecolor='black',alpha=0.4,label='model average')
+        # get 95% confidence
+        lidx95 = abs(cdf-0.025).argmin()
+        uidx95 = abs(cdf-0.975).argmin()
+        ax.fill_between(x=x[lidx95:uidx95],y1=ysum[lidx95:uidx95],facecolor='#b36ae2',edgecolor='black',alpha=0.4)
+        # get 68% confidence
+        lidx68 = abs(cdf-0.158655254).argmin()
+        uidx68 = abs(cdf-0.841344746).argmin()
+        ax.fill_between(x=x[lidx68:uidx68],y1=ysum[lidx68:uidx68],facecolor='#b36ae2',edgecolor='black',alpha=0.4)
+        # plot black curve over
+        ax.errorbar(x=[x[lidx95],x[lidx95]],y=[0,ysum[lidx95]],color='black',lw=2)
+        ax.errorbar(x=[x[uidx95],x[uidx95]],y=[0,ysum[uidx95]],color='black',lw=2)
+        ax.errorbar(x=[x[lidx68],x[lidx68]],y=[0,ysum[lidx68]],color='black',lw=2)
+        ax.errorbar(x=[x[uidx68],x[uidx68]],y=[0,ysum[uidx68]],color='black',lw=2)
+        ax.errorbar(x=x,y=ysum,ls='-',color='black')
+        for a in ydict.keys():
+            ax.errorbar(x=x,y=ydict[a],ls=p[a]['ls'],color=p[a]['color'],label=p[a]['tag'],lw=2)
+        ax.legend(fontsize=16,edgecolor='k',fancybox=False)
+        ax.set_ylim(bottom=0)
+        ax.set_xlim([1.225,1.335])
+        frame = plt.gca()
+        frame.axes.get_yaxis().set_visible(False)
+        ax.xaxis.set_tick_params(labelsize=16)
+        if s['save_figs']:
+            plt.savefig('%s/model_avg_histogram.pdf' %(self.loc),transparent=True)
+        plt.draw()
 
 if __name__=='__main__':
     print("chipt library")
