@@ -305,6 +305,7 @@ class plot_chiral_fit():
             color_list = [pp['l1648f211b580m013m065m838']['color'], pp['l2464f211b600m0170m0509m635']['color'], pp['l3296f211b630m0074m037m440']['color']]
             label = ['$g_A(\epsilon_\pi,a\simeq 0.15$~fm$)$','$g_A(\epsilon_\pi,a\simeq 0.12$~fm$)$','$g_A(\epsilon_\pi,a\simeq 0.09$~fm$)$']
             fitc.FV = False
+            ra = dict()
             for i in range(len(aw0_list)):
                 x = {'afs': afs_list[i]}
                 priorx = dict()
@@ -317,7 +318,8 @@ class plot_chiral_fit():
                         priorx[k] = fit.p[k]
                 extrap = fitc.fit_function(x,priorx)
                 ax.errorbar(x=epi_extrap,y=[j.mean for j in extrap],ls='-',marker='',elinewidth=1,color=color_list[i],label=label[i])
-            return ax
+                ra[i] = extrap
+            return ax, ra
         def c_continuum(ax,result):
             fit = result['fit']
             fitc = result['fitc']
@@ -340,16 +342,22 @@ class plot_chiral_fit():
             ax.axvline(epi_phys.mean,ls='--',color='#a6aaa9')
             ax.fill_between(epi_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi,a=0)$')
             ax.errorbar(x=epi_extrap,y=mean,ls='--',marker='',elinewidth=1,color='#b36ae2')
-            return ax, {'x':x, 'priorx':priorx}
+            return ax, {'x':x, 'priorx':priorx}, {'epi':epi_extrap,'y':extrap}
         def c_data(ax,s,result):
             x = result['fit'].prior['epi']
             if s['ansatz']['FV']:
                 y = result['fit'].y - result['fitc'].dfv(result['fit'].p)
             else:
                 y = result['fit'].y
+            datax = []
+            datay = []
+            elist = []
             for i,e in enumerate(s['ensembles']):
                 ax.errorbar(x=x[i].mean,xerr=x[i].sdev,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
-            return ax
+                datax.append(x[i])
+                datay.append(y[i])
+                elist.append(e)
+            return ax, {'x':np.array(x),'y':np.array(y),'ens':np.array(elist)}
         def c_pdg(ax,result):
             gA_pdg = [1.2723, 0.0023]
             ax.errorbar(x=result['phys']['epi'].mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
@@ -363,6 +371,7 @@ class plot_chiral_fit():
             plt.gca().add_artist(leg)
             return None
         ### Chiral extrapolation
+        r_chiral = dict()
         for ansatz_truncate in s['ansatz']['type']:
             if ansatz_truncate.split('_')[0] in ['xpt-delta']:
                 print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
@@ -371,11 +380,12 @@ class plot_chiral_fit():
             fig = plt.figure('%s chiral extrapolation' %ansatz_truncate,figsize=(7,4.326237))
             ax = plt.axes([0.15,0.15,0.8,0.8])
             # continuum extrapolation
-            ax, xp = c_continuum(ax,result) # xp is used to make chipt convergence plot
+            ax, xp, r0 = c_continuum(ax,result) # xp is used to make chipt convergence plot
             # plot chiral extrapolation
-            ax = c_chiral(ax,result)
+            ax, ra = c_chiral(ax,result)
             # plot data
-            ax = c_data(ax,s,result)
+            ax, rd = c_data(ax,s,result)
+            r_chiral[ansatz_truncate] = {'r0':r0,'ra':ra,'rd':rd}
             # plot pdg
             ax = c_pdg(ax,result)
             # make legend
@@ -414,6 +424,7 @@ class plot_chiral_fit():
             if s['save_figs']:
                 plt.savefig('%s/convergence_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
+        return r_chiral
     def plot_continuum(self,s,data,result_list):
         def a_chiral(ax,result):
             fit = result['fit']
@@ -445,7 +456,7 @@ class plot_chiral_fit():
                     ax.errorbar(x=aw0_extrap_plot,y=[j.mean for j in extrap],ls=ls_list[i],dashes=dashes,marker='',elinewidth=1,color=color[i],label=label[i])
                 else:
                     ax.errorbar(x=aw0_extrap_plot,y=[j.mean for j in extrap],ls=ls_list[i],marker='',elinewidth=1,color=color[i],label=label[i])
-            return ax
+            return ax, {'aw0_extrap_plot':aw0_extrap_plot,'y':extrap}
         def a_cont(ax,result):
             fit = result['fit']
             fitc = result['fitc']
@@ -467,7 +478,7 @@ class plot_chiral_fit():
             aw0_extrap_plot = aw0_extrap**2/(4*np.pi)
             ax.fill_between(aw0_extrap_plot,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi^{phys.},\epsilon_a)$')
             ax.errorbar(x=aw0_extrap_plot,y=mean,ls='-',marker='',elinewidth=1,color='#b36ae2')
-            return ax, {'x':x, 'priorx':priorx}
+            return ax, {'x':x, 'priorx':priorx}, {'aw0_extrap_plot':aw0_extrap_plot,'y':extrap}
         def a_data(ax,s,result):
             x = result['fit'].prior['aw0']
             if s['ansatz']['FV']:
@@ -490,6 +501,7 @@ class plot_chiral_fit():
             ax.legend(handles=l1,numpoints=1,loc=3,ncol=2)
             plt.gca().add_artist(leg)
             return None
+        r_cont = dict()
         for ansatz_truncate in s['ansatz']['type']:
             if ansatz_truncate.split('_')[0] in ['xpt-delta']:
                 print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
@@ -498,9 +510,10 @@ class plot_chiral_fit():
             fig = plt.figure('%s continuum extrapolation' %ansatz_truncate,figsize=(7,4.326237))
             ax = plt.axes([0.15,0.15,0.8,0.8])
             # continuum extrapolation
-            ax, res = a_cont(ax,result)
+            ax, res, r0 = a_cont(ax,result)
             # chiral extrapolation
-            ax = a_chiral(ax,result)
+            ax, ra = a_chiral(ax,result)
+            r_cont[ansatz_truncate] = {'r0':r0,'ra':ra}
             # plot data
             ax = a_data(ax,s,result)
             # plot PDG
@@ -518,6 +531,7 @@ class plot_chiral_fit():
             if s['save_figs']:
                 plt.savefig('%s/continuum_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
+        return r_cont
     def plot_volume(self,s,data,result_list):
         if s['ansatz']['FV']:
             def v_vol(ax,s,result,ansatz_truncate):
@@ -544,7 +558,7 @@ class plot_chiral_fit():
                 mpiL_extrap_plot = np.exp(-mpiL_extrap)/np.sqrt(mpiL_extrap)
                 ax.fill_between(mpiL_extrap_plot,mean+sdev,mean-sdev,alpha=0.4,color='#70bf41')
                 ax.errorbar(x=mpiL_extrap_plot,y=mean,ls='--',marker='',elinewidth=1,color='#70bf41',label='NLO $\chi$PT prediction')
-                return ax
+                return ax, {'mpiL_extrap_plot':mpiL_extrap_plot,'y':extrap}
             def v_data(ax,s,data,result):
                 x = data['mpl']
                 y = result['fit'].y
@@ -559,6 +573,7 @@ class plot_chiral_fit():
                 leg = ax.legend(handles=handles,loc=2,ncol=1, fontsize=20,edgecolor='k',fancybox=False)
                 plt.gca().add_artist(leg)
                 return None
+            r_fv = dict()
             for ansatz_truncate in s['ansatz']['type']:
                 if ansatz_truncate.split('_')[0] in ['xpt-delta']:
                     print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
@@ -567,7 +582,8 @@ class plot_chiral_fit():
                 fig = plt.figure('%s infinite volume extrapolation' %ansatz_truncate,figsize=(7,4.326237))
                 ax = plt.axes([0.15,0.15,0.8,0.8])
                 # plot IV extrapolation
-                ax = v_vol(ax,s,result,ansatz_truncate)
+                ax, r = v_vol(ax,s,result,ansatz_truncate)
+                r_fv[ansatz_truncate] = r
                 # plot data
                 ax = v_data(ax,s,data,result)
                 # plot legend
@@ -584,6 +600,7 @@ class plot_chiral_fit():
                 if s['save_figs']:
                     plt.savefig('%s/volume_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
                 plt.draw()
+            return r
         else:
             print('no FV prediction')
     def plot_histogram(self,s,x,ysum,ydict,cdf):
@@ -624,6 +641,60 @@ class plot_chiral_fit():
         if s['save_figs']:
             plt.savefig('%s/model_avg_histogram.pdf' %(self.loc),transparent=True)
         plt.draw()
-
+    def model_avg_extrap(self,s,phys,wd,r_chiral):
+        # model average
+        y = 0
+        ya = {0:0,1:0,2:0}
+        d = 0
+        for k in wd.keys():
+            y += wd[k]*r_chiral[k]['r0']['y']
+            d += wd[k]*r_chiral[k]['rd']['y']
+            for a in r_chiral[k]['ra'].keys():
+                ya[a] += wd[k]*r_chiral[k]['ra'][a]
+        # plot
+        fig = plt.figure('model average chiral extrapolation',figsize=(7,4.326237))
+        ax = plt.axes([0.15,0.15,0.8,0.8])
+        # physical epi
+        F = phys['fpi']/np.sqrt(2)
+        m = phys['mpi']
+        epi_phys = m/(4.*np.pi*F)
+        ax.axvspan(epi_phys.mean-epi_phys.sdev, epi_phys.mean+epi_phys.sdev, alpha=0.4, color='#a6aaa9')
+        ax.axvline(epi_phys.mean,ls='--',color='#a6aaa9')
+        # continuum extrap
+        epi_extrap = r_chiral[k]['r0']['epi']
+        mean = np.array([i.mean for i in y])
+        sdev = np.array([i.sdev for i in y])
+        ax.fill_between(epi_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi,a=0)$')
+        ax.errorbar(x=epi_extrap,y=mean,ls='--',marker='',elinewidth=1,color='#b36ae2')
+        # finite lattice spacing
+        pp = self.plot_params
+        color_list = [pp['l1648f211b580m013m065m838']['color'], pp['l2464f211b600m0170m0509m635']['color'], pp['l3296f211b630m0074m037m440']['color']]
+        label = ['$g_A(\epsilon_\pi,a\simeq 0.15$~fm$)$','$g_A(\epsilon_\pi,a\simeq 0.12$~fm$)$','$g_A(\epsilon_\pi,a\simeq 0.09$~fm$)$']
+        for idx,i in enumerate(r_chiral[k]['ra'].keys()):
+            ax.errorbar(x=r_chiral[k]['r0']['epi'],y=[j.mean for j in ya[i]],ls='-',marker='',elinewidth=1,color=color_list[idx],label=label[idx])
+        # data
+        for i,e in enumerate(r_chiral[k]['rd']['ens']):
+            ax.errorbar(x=r_chiral[k]['rd']['x'][i].mean,y=d[i].mean,yerr=d[i].sdev,ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
+        # pdg
+        gA_pdg = [1.2723, 0.0023]
+        ax.errorbar(x=epi_phys.mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
+        # legend
+        handles, labels = ax.get_legend_handles_labels()
+        l0 = [handles[0],handles[-1]]
+        l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
+        leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1)
+        ax.legend(handles=l1,numpoints=1,loc=4,ncol=2)
+        plt.gca().add_artist(leg)
+        # settings
+        ax.set_ylim([1.075,1.375])
+        ax.set_xlim([0,0.32])
+        ax.set_xlabel('$\epsilon_\pi=m_\pi/(4\pi F_\pi)$', fontsize=20)
+        ax.set_ylabel('$g_A$', fontsize=20)
+        ax.xaxis.set_tick_params(labelsize=16)
+        ax.yaxis.set_tick_params(labelsize=16)
+        ax.set_title('model average',fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+        if s['save_figs']:
+            plt.savefig('%s/chiral_modelavg.pdf' %(self.loc),transparent=True)
+        plt.draw()
 if __name__=='__main__':
     print("chipt library")
