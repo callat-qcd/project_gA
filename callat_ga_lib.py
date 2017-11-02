@@ -39,6 +39,7 @@ class fit_class():
         self.xsb = xsb
         self.alpha = alpha
         self.FV = FV
+        self.at = '%s_%s' %(ansatz,truncate)
         # FV Bessel functions
         cn = np.array([6,12,8,6,24,24,0,12,30,24,24,8,24,48,0,6,48,36,24,24]) # |n| multiplicity
         mLn = [i*np.sqrt(np.arange(1,len(cn)+1)) for i in mL]
@@ -51,11 +52,13 @@ class fit_class():
         a = self.ansatz.split('-')[0]
         for k in p[a].keys():
             if int(k[-1]) <= self.n:
-                prior[k] = p[a][k]
+                prior['%s_%s' %(self.at,k)] = p[a][k]
             else: pass
         return prior
     def dfv(self,p):
-        r = 8./3.*p['epi']**2*(p['g0']**3*self.F1+p['g0']*self.F3)
+        epi = p['epi']
+        g0 = p['%s_g0' %self.at]
+        r = 8./3.*epi**2*(g0**3*self.F1+g0*self.F3)
         return r
     def R(self,zz):
         try:
@@ -82,53 +85,73 @@ class fit_class():
         return r
     def fit_function(self,x,p):
         def nnnlo_analytic_xpt(x,p):
-            r = p['g0'] #*np.ones_like(p['epi']) # lo
+            epi = p['epi']
+            aw0 = p['aw0']
+            g0 = p['%s_g0' %self.at]
+            r = g0 #*np.ones_like(p['epi']) # lo
             if self.n >= 1: # DWF O(a) discretization
                 if self.xsb:
-                    r += p['a1']*p['aw0']
+                    a1 = p['%s_a1' %self.at]
+                    r += a1*aw0
             if self.n >= 2: # nlo
-                g2  = p['g0'] +2.*p['g0']**3 # nucleon terms
-                r += -1.*p['epi']**2 * g2 *np.log(p['epi']**2) # nlo log
+                c2 = p['%s_c2' %self.at]
+                a2 = p['%s_a2' %self.at]
+                g2  = g0 +2.*g0**3 # nucleon terms
+                r += -1.*epi**2 * g2 *np.log(epi**2) # nlo log
                 # counter terms
-                r += p['epi']**2*p['c2'] # nlo counter term
-                r += (p['aw0']**2/(4.*np.pi))*p['a2'] # nlo discretization
+                r += epi**2*c2 # nlo counter term
+                r += (aw0**2/(4.*np.pi))*a2 # nlo discretization
                 if self.alpha:
-                    r += x['afs']*(p['aw0']/(4.*np.pi))**2*p['s2'] # nlo alpha_s a^2
+                    s2 = p['%s_s2' %self.at]
+                    r += x['afs']*(aw0/(4.*np.pi))**2*s2 # nlo alpha_s a^2
                 if self.FV:
                     r += self.dfv(p)
             if self.n >= 3: # nnlo
-                r += p['g0']*p['c3']*p['epi']**3 # nnlo log
+                c3 = p['%s_c3' %self.at]
+                r += g0*c3*epi**3 # nnlo log
             if self.n >= 4: # nnnlo analytic terms
-                r += p['epi']**4*p['c4'] # nnnlo epi^4
-                r += p['epi']**2*(p['aw0']**2/(4.*np.pi))*p['b4'] # nnnlo epi^2 a^2
-                r += (p['aw0']**4/(4.*np.pi)**2)*p['a4'] # nnnlo a^4
+                c4 = p['%s_c4' %self.at]
+                b4 = p['%s_b4' %self.at]
+                a4 = p['%s_a4' %self.at]
+                r += epi**4*c4 # nnnlo epi^4
+                r += epi**2*(aw0**2/(4.*np.pi))*b4 # nnnlo epi^2 a^2
+                r += (aw0**4/(4.*np.pi)**2)*a4 # nnnlo a^4
             return r
         def nnnlo_log2_xpt(x,p):
             r = 0
             if self.n >= 4:
-                l2  = -16./3*p['g0'] -11./3*p['g0']**3 +16.*p['g0']**5
-                l2 += 4.*(2*p['g0'] + 4**p['g0']**3)
-                r = l2/4. * p['epi']**4 * (np.log(p['epi']**2))**2
+                epi = p['epi']
+                g0 = p['%s_g0' %self.at]
+                l2 = -16./3*g0 -11./3*g0**3 +16.*g0**5
+                l2 += 4.*(2*g0 + 4**g0**3)
+                r = l2/4.*epi**4 * (np.log(epi**2))**2
             return r
         def nnnlo_log_xpt(x,p):
             r = 0
             if self.n >= 4:
-                r = p['gm4'] * p['epi']**4 * np.log(p['epi']**2)
+                epi = p['epi']
+                gm4 = p['%s_gm4' %self.at]
+                r = gm4*epi**4*np.log(epi**2)
             return r
         def nlo_delta_xpt(x,p):
             r = 0
             if self.n >= 2:
-                g2 = p['gnd0']**2 *(2.*p['g0'] / 9 +50.*p['gdd0'] / 81) #delta
-                r  = -1.*g2 * p['epi']**2 * np.log(p['epi']**2)
+                epi = p['epi']
+                ed = p['ed']
+                g0 = p['%s_g0' %self.at]
+                gnd0 = p['%s_gnd0' %self.at]
+                gdd0 = p['%s_gdd0' %self.at]
+                g2 = gnd0**2*(2.*g0/9 +50.*gdd0/81) #delta
+                r  = -1.*g2*epi**2*np.log(epi**2)
                 # extra delta terms
-                g2r  = p['gnd0']**2 * p['epi']**2 * 32.*p['g0'] / 27
-                g2r += p['gnd0']**2 * p['ed']**2 * (76.*p['g0']/27 +100.*p['gdd0']/81)
-                r   += -1.*g2r * self.R(p['epi']**2 / p['ed']**2)
-                g2d  = 76.*p['g0']*p['gnd0']**2 / 27
-                g2d += 100.*p['gdd0']*p['gnd0']**2 / 81
-                r   += -1.*g2d * p['ed']**2 * np.log(4.*p['ed']**2 / p['epi']**2)
+                g2r  = gnd0**2*epi**2 * 32.*g0 / 27
+                g2r += gnd0**2*ed**2 * (76.*g0/27 +100.*gdd0/81)
+                r   += -1.*g2r*self.R(epi**2 / ed**2)
+                g2d  = 76.*g0*gnd0**2 / 27
+                g2d += 100.*gdd0*gnd0**2 / 81
+                r   += -1.*g2d*ed**2*np.log(4.*ed**2/epi**2)
                 # delta mpi^3 term
-                r   += 32.*np.pi / 27 * p['g0']*p['gnd0']**2 * p['epi']**3 / p['ed']
+                r   += 32.*np.pi/27*g0*gnd0**2*epi**3/ed
             return r
         if self.ansatz == 'xpt':
             r = nnnlo_analytic_xpt(x,p)
@@ -147,36 +170,56 @@ class fit_class():
             r += nlo_delta_xpt(x,p)
             return r
         elif self.ansatz == 'taylor':
-            r = p['c0']
+            epi = p['epi']
+            aw0 = p['aw0']
+            c0 = p['%s_c0' %self.at]
+            r = c0
             if self.n >= 2:
-                r += p['c2']*p['epi']**2
-                r += p['a2']*(p['aw0']**2/(4.*np.pi))
+                c2 = p['%s_c2' %self.at]
+                a2 = p['%s_a2' %self.at]
+                r += c2*epi**2
+                r += a2*(aw0**2/(4.*np.pi))
                 if self.FV:
                     r += self.dfv(p)
             if self.n >= 4:
-                r += p['c4']*p['epi']**4
-                r += p['a4']*(p['aw0']**4/(4.*np.pi)**2)
-                r += p['b4']*p['epi']**2*(p['aw0']**2/(4.*np.pi))
+                c4 = p['%s_c4' %self.at]
+                b4 = p['%s_b4' %self.at]
+                a4 = p['%s_a4' %self.at]
+                r += c4*epi**4
+                r += a4*(aw0**4/(4.*np.pi)**2)
+                r += b4*epi**2*(aw0**2/(4.*np.pi))
             return r
         elif self.ansatz == 'linear':
-            r = p['c0']
+            epi = p['epi']
+            aw0 = p['aw0']
+            c0 = p['%s_c0' %self.at]
+            r = c0
             if self.n >= 2:
-                r += p['c2']*p['epi']
-                r += p['a2']*(p['aw0']**2/(4.*np.pi))
+                c2 = p['%s_c2' %self.at]
+                a2 = p['%s_a2' %self.at]
+                r += c2*epi
+                r += a2*(aw0**2/(4.*np.pi))
                 if self.FV:
                     r += self.dfv(p)
             if self.n >= 4:
-                r += p['c4']*p['epi']**2
-                r += p['a4']*(p['aw0']**4/(4.*np.pi)**2)
+                c4 = p['%s_c4' %self.at]
+                a4 = p['%s_a4' %self.at]
+                r += c4*epi**2
+                r += a4*(aw0**4/(4.*np.pi)**2)
             return r
         elif self.ansatz == 'constant':
-            r = p['c0']
+            epi = p['epi']
+            aw0 = p['aw0']
+            c0 = p['%s_c0' %self.at]
+            r = c0
             if self.n >= 2:
-                r += p['a2']*(p['aw0']**2/(4.*np.pi))
+                a2 = p['%s_a2' %self.at]
+                r += a2*(aw0**2/(4.*np.pi))
                 if self.FV:
                     r += self.dfv(p)
             if self.n >= 4:
-                r += p['a4']*(p['aw0']**4/(4.*np.pi)**2)
+                a4 = p['%s_a4' %self.at]
+                r += a4*(aw0**4/(4.*np.pi)**2)
             return r
         else:
             print('need to define fit function')
@@ -195,6 +238,10 @@ def fit_data(s,p,data,phys):
         truncate = int(ansatz_truncate.split('_')[1])
         fitc = fit_class(ansatz,truncate,xsb,alpha,data['mpl'],FV)
         prior = fitc.get_priors(p,data['prior'])
+    for ansatz_truncate in ansatz_list:
+        ansatz = ansatz_truncate.split('_')[0]
+        truncate = int(ansatz_truncate.split('_')[1])
+        fitc = fit_class(ansatz,truncate,xsb,alpha,data['mpl'],FV)
         fit = lsqfit.nonlinear_fit(data=(x,y),prior=prior,fcn=fitc.fit_function)
         phys_pt = eval_phys(phys,fitc,fit)
         result[ansatz_truncate] = {'fit':fit, 'phys':phys_pt, 'fitc': fitc}
@@ -229,23 +276,54 @@ def error_budget(s,result_list):
         priorc = result['phys']['priorc']
         phys = result['phys']['result']
         statistical = phys.partialsdev(fit.y)
-        input_error = phys.partialsdev(priorc['epi'],prior['aw0'])
+        inputerror = phys.partialsdev(priorc['epi'],priorc['ed'])
         # compile chiral and discretization lists then splat as function input
-        if s['ansatz']['FV']:
-            X_list = [prior['g0']]
-        else:
-            X_list = []
+        X_list = []
         d_list = []
-        n = int(ansatz_truncate.split('_')[1])
-        for k in prior.keys():
-            if (k[0] == 'c' or k[0] == 'b') and int(k[-1]) <= n:
-                X_list.append(prior[k])
-            if (k[0] == 'a' or k[0] == 's') and k[1] != 'w' and int(k[-1]) <= n:
-                d_list.append(prior[k])
+        k_list = []
+        at = ansatz_truncate.split('_')
+        ansatz = at[0]
+        n = int(at[1])
+        for key in prior.keys():
+            ks = key.split('_')
+            k = ks[-1]
+            if k[0] in ['c','b','g'] and ansatz_truncate in key:
+                X_list.append(prior[key])
+                k_list.append(key)
+            if k[0] in ['a','s'] and ansatz_truncate in key:
+                d_list.append(prior[key])
+                k_list.append(key)
         chiral      = phys.partialsdev(*X_list)
         disc        = phys.partialsdev(*d_list)
-        err[ansatz_truncate] = {'stat': [statistical/phys.mean*100], 'chiral': [chiral/phys.mean*100], 'disc': [disc/phys.mean*100], 'input': [input_error/phys.mean*100], 'total': [phys.sdev/phys.mean*100]}
+        pct = {'stat':[statistical/phys.mean*100],'chiral':[chiral/phys.mean*100],'disc':[disc/phys.mean*100],'input':[inputerror/phys.mean*100],'total':[phys.sdev/phys.mean*100]}
+        std = {'stat':statistical,'chiral':chiral,'disc':disc,'input':inputerror,'total':phys.sdev}
+        err[ansatz_truncate] = {'pct':pct,'std':std,'mean':phys.mean}
     return err
+
+def modelavg_error(s,result_list,ga):
+    result = result_list[s['ansatz']['type'][-1]]
+    fit = result['fit']
+    prior = fit.prior
+    phys_epi = result['phys']['priorc']['epi']
+    phys_ed = result['phys']['priorc']['ed']
+    statistical = ga.partialsdev(fit.y,phys_epi,phys_ed)
+    X_list = []
+    d_list = []
+    k_list = []
+    for key in prior.keys():
+        ks = key.split('_')
+        k = ks[-1]
+        if k[0] in ['c','b','g']:
+            X_list.append(prior[key])
+            k_list.append(key)
+        if k[0] in ['a','s'] and key not in ['aw0']:
+            d_list.append(prior[key])
+            k_list.append(key)
+    chiral      = ga.partialsdev(*X_list)
+    disc        = ga.partialsdev(*d_list)
+    pct = {'stat':[statistical/ga.mean*100],'chiral':[chiral/ga.mean*100],'disc':[disc/ga.mean*100],'total':[ga.sdev/ga.mean*100]}
+    std = {'stat':statistical,'chiral':chiral,'disc':disc,'total':ga.sdev}
+    return {'pct':pct,'std':std,'mean':ga.mean}
 
 class plot_chiral_fit():
     def __init__(self):
@@ -703,7 +781,7 @@ class plot_chiral_fit():
             ax.errorbar(x=r_chiral[k]['rd']['x'][i].mean,y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
         # pdg
         gA_pdg = [1.2723, 0.0023]
-        ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
+        ax.errorbar(x=epi_phys.mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
         # legend
         handles, labels = ax.get_legend_handles_labels()
         l0 = [handles[0],handles[-1]]
