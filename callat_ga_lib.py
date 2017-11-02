@@ -703,7 +703,7 @@ class plot_chiral_fit():
             ax.errorbar(x=r_chiral[k]['rd']['x'][i].mean,y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
         # pdg
         gA_pdg = [1.2723, 0.0023]
-        ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
+        ax.errorbar(x=epi_phys.mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
         # legend
         handles, labels = ax.get_legend_handles_labels()
         l0 = [handles[0],handles[-1]]
