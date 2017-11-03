@@ -456,8 +456,8 @@ class plot_chiral_fit():
             handles, labels = ax.get_legend_handles_labels()
             l0 = [handles[0],handles[-1]]
             l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
-            leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1)
-            ax.legend(handles=l1,numpoints=1,loc=4,ncol=2)
+            leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=12,edgecolor='k',fancybox=False)
+            ax.legend(handles=l1,numpoints=1,loc=4,ncol=2,fontsize=12,edgecolor='k',fancybox=False)
             plt.gca().add_artist(leg)
             return None
         ### Chiral extrapolation
@@ -502,7 +502,7 @@ class plot_chiral_fit():
             ax.axvline(epi_phys.mean,ls='--',color='#a6aaa9')
             # make legend
             handles, labels = ax.get_legend_handles_labels()
-            ax.legend(handles=handles,loc=3,ncol=2)
+            ax.legend(handles=handles,loc=3,ncol=2,fontsize=12,edgecolor='k',fancybox=False)
             # format plot
             ax.set_ylim([1.075,1.375])
             ax.set_xlim([0,0.32])
@@ -595,8 +595,8 @@ class plot_chiral_fit():
             handles, labels = ax.get_legend_handles_labels()
             l0 = [handles[0],handles[-1]]
             l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
-            leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1)
-            ax.legend(handles=l1,numpoints=1,loc=3,ncol=2)
+            leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=12,edgecolor='k',fancybox=False)
+            ax.legend(handles=l1,numpoints=1,loc=3,ncol=2,fontsize=12,edgecolor='k',fancybox=False)
             plt.gca().add_artist(leg)
             return None
         r_cont = dict()
@@ -639,7 +639,7 @@ class plot_chiral_fit():
                 xsb = s['ansatz']['xsb']
                 alpha = s['ansatz']['alpha']
                 FV = s['ansatz']['FV']
-                mpiL_extrap = np.linspace(0.000001,10.200001,10201)
+                mpiL_extrap = np.linspace(0.001,10.201,10201)
                 fitc = fit_class(ansatz,truncate,xsb,alpha,mpiL_extrap,FV)
                 x = {'afs': 0}
                 priorx = dict()
@@ -674,7 +674,7 @@ class plot_chiral_fit():
                 return ax, {'x':np.array(xlist),'y':np.array(ylist),'ens':np.array(elist)}
             def v_legend(ax):
                 handles, labels = ax.get_legend_handles_labels()
-                leg = ax.legend(handles=handles,loc=2,ncol=1, fontsize=20,edgecolor='k',fancybox=False)
+                leg = ax.legend(handles=handles,loc=4,ncol=1, fontsize=12,edgecolor='k',fancybox=False)
                 plt.gca().add_artist(leg)
                 return None
             r_fv = dict()
@@ -700,7 +700,7 @@ class plot_chiral_fit():
                 ax.yaxis.set_ticks([1.23,1.25,1.27,1.29])
                 ax.xaxis.set_tick_params(labelsize=16)
                 ax.yaxis.set_tick_params(labelsize=16)
-                ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'right'},x=0.95,y=0.1)
+                ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':20,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
                 if s['save_figs']:
                     plt.savefig('%s/volume_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
                 plt.draw()
@@ -736,7 +736,7 @@ class plot_chiral_fit():
         ax.errorbar(x=x,y=ysum,ls='-',color='black')
         for a in ydict.keys():
             ax.errorbar(x=x,y=ydict[a],ls=p[a]['ls'],color=p[a]['color'],label=p[a]['tag'],lw=2)
-        ax.legend(fontsize=16,edgecolor='k',fancybox=False)
+        ax.legend(fontsize=12,edgecolor='k',fancybox=False)
         ax.set_ylim(bottom=0)
         ax.set_xlim([1.225,1.335])
         frame = plt.gca()
@@ -786,8 +786,8 @@ class plot_chiral_fit():
         handles, labels = ax.get_legend_handles_labels()
         l0 = [handles[0],handles[-1]]
         l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
-        leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1)
-        ax.legend(handles=l1,numpoints=1,loc=4,ncol=2)
+        leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=12,edgecolor='k',fancybox=False)
+        ax.legend(handles=l1,numpoints=1,loc=4,ncol=2,fontsize=12,edgecolor='k',fancybox=False)
         plt.gca().add_artist(leg)
         # settings
         ax.set_ylim([1.075,1.375])
@@ -839,8 +839,8 @@ class plot_chiral_fit():
         handles, labels = ax.get_legend_handles_labels()
         l0 = [handles[0],handles[-1]]
         l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
-        leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1)
-        ax.legend(handles=l1,numpoints=1,loc=3,ncol=2)
+        leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=12,edgecolor='k',fancybox=False)
+        ax.legend(handles=l1,numpoints=1,loc=3,ncol=2,fontsize=12,edgecolor='k',fancybox=False)
         plt.gca().add_artist(leg)
         # settings
         ax.set_ylim([1.075,1.375])
@@ -875,7 +875,7 @@ class plot_chiral_fit():
             ax.errorbar(x=r_fv[k]['rd']['x'][i],y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'])
         # legend
         handles, labels = ax.get_legend_handles_labels()
-        leg = ax.legend(handles=handles,loc=2,ncol=1, fontsize=20,edgecolor='k',fancybox=False)
+        leg = ax.legend(handles=handles,loc=4,ncol=1, fontsize=12,edgecolor='k',fancybox=False)
         plt.gca().add_artist(leg)
         # settings
         ax.set_ylim([1.22,1.3])
