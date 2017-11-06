@@ -52,7 +52,9 @@ class fit_class():
         a = self.ansatz.split('-')[0]
         for k in p[a].keys():
             if int(k[-1]) <= self.n:
-                prior['%s_%s' %(self.at,k)] = p[a][k]
+                mean = p[a][k].mean
+                sdev = p[a][k].sdev
+                prior['%s_%s' %(self.at,k)] = gv.gvar(mean,sdev)
             else: pass
         return prior
     def dfv(self,p):
