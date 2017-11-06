@@ -347,6 +347,7 @@ class plot_chiral_fit():
         self.plot_params['l4896f211b630m00363m0363m430'] = {'abbr': 'a09m220',  'color': '#51a7f9', 'marker': '^', 'label': ''}
         self.title = {
             'xpt_4':r'NNLO+ct $\chi$PT','xpt_3':r'NNLO $\chi$PT',
+            'xpt_2':r'NLO $\chi$PT',
             'xpt-full_4':r'N3LO $\chi$PT',
             'taylor_2':r'NLO Taylor $\epsilon_\pi^2$','taylor_4':r'NNLO Taylor $\epsilon_\pi^2$',
             'linear_2':r'NLO Taylor $\epsilon_\pi$','linear_4':r'NNLO Taylor $\epsilon_\pi$'
@@ -717,6 +718,9 @@ class plot_chiral_fit():
         p['xpt_4']    = {'color':'#70bf41','ls':':','tag':'N3LO $\chi$PT'}
         p['linear_2'] = {'color':'#51a7f9','ls':'--','tag':'NLO Taylor $\epsilon_\pi$'}
         p['linear_4'] = {'color':'#51a7f9','ls':':','tag':'NNLO Taylor $\epsilon_\pi$'}
+        p['xpt-delta_2'] = {'color':'#70bf41','ls':'--','tag':'NLO $\Delta\chi$PT'}
+        p['xpt-delta_3'] = {'color':'#70bf41','ls':':','tag':'NNLO $\Delta\chi$PT'}
+        p['xpt-delta_4'] = {'color':'#70bf41','ls':'-.','tag':'N3LO $\Delta\chi$PT'}
         fig = plt.figure('result histogram',figsize=(7,4.326237))
         ax = plt.axes([0.15,0.15,0.8,0.8])
         ax.fill_between(x=x,y1=ysum,facecolor='#b36ae2',edgecolor='black',alpha=0.4,label='model average')
