@@ -1,6 +1,7 @@
 import sys
 import gvar as gv
 import scipy.special as spsp
+import scipy.stats as stats
 import numpy as np
 import lsqfit
 import matplotlib.pyplot as plt
@@ -302,7 +303,52 @@ def error_budget(s,result_list):
         err[ansatz_truncate] = {'pct':pct,'std':std,'mean':phys.mean}
     return err
 
-def modelavg_error(s,result_list,ga):
+def bma(switches,result,fverror,isospin):
+    # read Bayes Factors
+    logGBF_list = []
+    for a in switches['ansatz']['type']:
+        logGBF_list.append(result[a]['fit'].logGBF)
+    # initiate a bunch of parameters
+    # gA
+    gA = 0
+    gA_lst = []
+    gA_dict = dict()
+    # weights
+    w_lst = []
+    wd = dict()
+    # p. dist. fcn
+    pdf = 0
+    pdfdict = dict()
+    # c. dist. fcn.
+    cdf = 0
+    cdfdict = dict()
+    # for plotting
+    x = np.linspace(1.222,1.352,13000)
+    for a in switches['ansatz']['type']:
+        r = result[a]['phys']['result']
+        gA_dict[a] = r
+        w = 1/sum(np.exp(np.array(logGBF_list)-result[a]['fit'].logGBF))
+        wd[a] = w
+        w_lst.append(w)
+        gA += w*r
+        gA_lst.append(r.mean)
+        p = stats.norm.pdf(x,r.mean,r.sdev)
+        pdf += w*p
+        pdfdict[a] = w*p
+        c = stats.norm.cdf(x,r.mean,r.sdev)
+        cdf += w*c
+        cdfdict[a] = w*c
+    gA_lst = np.array(gA_lst)
+    w_lst = np.array(w_lst)
+    model_var = np.sum(w_lst*(gA_lst**2 - gA.mean**2))
+    final_error = np.sqrt(gA.sdev**2 + fverror**2 + isospin**2)
+    additional_var = {'fv':fverror**2, 'isospin':isospin**2, 'model': model_var,'total':final_error**2}
+    model_budget = modelavg_error(switches,result,gA,additional_var)
+    error = {'E(gA)': gA.mean, 's(gA)': final_error, 's(Mk)': np.sqrt(model_var), 'weights': wd, 'error_budget': model_budget, 'gA_dict':gA_dict}
+    plot_params = {'x':x, 'pdf':pdf, 'pdfdict':pdfdict, 'cdf':cdf, 'cdfdict':cdfdict}
+    return error, plot_params
+
+def modelavg_error(s,result_list,ga,var):
     result = result_list[s['ansatz']['type'][-1]]
     fit = result['fit']
     prior = fit.prior
@@ -323,8 +369,9 @@ def modelavg_error(s,result_list,ga):
             k_list.append(key)
     chiral      = ga.partialsdev(*X_list)
     disc        = ga.partialsdev(*d_list)
-    pct = {'stat':[statistical/ga.mean*100],'chiral':[chiral/ga.mean*100],'disc':[disc/ga.mean*100],'total':[ga.sdev/ga.mean*100]}
-    std = {'stat':statistical,'chiral':chiral,'disc':disc,'total':ga.sdev}
+    total = np.sqrt(ga.sdev**2+var['fv']+var['isospin']+var['model'])
+    pct = {'stat':[statistical/ga.mean*100],'chiral':[chiral/ga.mean*100],'disc':[disc/ga.mean*100],'FV':[np.sqrt(var['fv'])/ga.mean*100],'isospin':[np.sqrt(var['isospin'])/ga.mean*100],'model':[np.sqrt(var['model'])/ga.mean*100],'total':[total/ga.mean*100]}
+    std = {'stat':statistical,'chiral':chiral,'disc':disc,'fv':np.sqrt(var['fv']),'isospin':np.sqrt(var['isospin']),'total_fit':ga.sdev,'total':total}
     return {'pct':pct,'std':std,'mean':ga.mean}
 
 class plot_chiral_fit():
@@ -710,7 +757,11 @@ class plot_chiral_fit():
             return r_fv
         else:
             print('no FV prediction')
-    def plot_histogram(self,s,x,ysum,ydict,cdf):
+    def plot_histogram(self,s,pp):
+        x = pp['x']
+        ysum = pp['pdf']
+        ydict = pp['pdfdict']
+        cdf = pp['cdf']
         # '-','--','-.',':'
         # #ec5d57 #70bf41 #51a7f9
         p = dict()
