@@ -689,7 +689,7 @@ class plot_chiral_fit():
                 xsb = s['ansatz']['xsb']
                 alpha = s['ansatz']['alpha']
                 FV = s['ansatz']['FV']
-                mpiL_extrap = np.linspace(0.1,6,100)
+                mpiL_extrap = np.linspace(3,10,500)
                 fitc = fit_class(ansatz,truncate,xsb,alpha,mpiL_extrap,FV)
                 x = {'afs': 0}
                 priorx = dict()
