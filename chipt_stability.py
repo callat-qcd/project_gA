@@ -91,7 +91,7 @@ for idx,t in enumerate(ticks):
 
 #print ticklabels
 ax0.set_xlabel('$g_A$', fontsize=16)
-ax1.set_xlabel('$\chi^2/$dof', fontsize=16)
+ax1.set_xlabel('$\chi^2_{aug}/$dof', fontsize=16)
 ax2.set_xlabel('Bayes Factor', fontsize=16)
 ax0.set_yticks(ticks)
 ax0.set_yticklabels(ticklabels)
