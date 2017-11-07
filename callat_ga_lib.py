@@ -424,7 +424,7 @@ class plot_chiral_fit():
             x = xp['x']
             priorx = xp['priorx']
             if ansatz in ['taylor','linear']:
-                tn = fitc.n//2+1
+                tn = int(fitc.n//2+1)
                 order = np.zeros(tn)
                 order[0] = 1
                 for i in range(1,tn):
