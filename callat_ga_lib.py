@@ -268,7 +268,22 @@ def eval_phys(phys,fitc,fit):
             priorc[k] = fit.p[k]
     fitc.FV = False
     phys = fitc.fit_function(x,priorc)
-    return {'result': phys, 'priorc': priorc, 'epi': epi}
+    # get physical point breakdown
+    order_contribution = []
+    init_order = fitc.n
+    if fitc.ansatz in ['taylor','linear']:
+        tn = fitc.n//2+1
+        order = np.zeros(tn)
+        order[0] = 1
+        for i in range(1,tn):
+            order[i] = 2*i
+    else:
+        tn = fitc.n
+        order = range(1,tn+1)
+    for n in range(tn):
+        fitc.n = order[n]
+        order_contribution.append(fitc.fit_function(x,priorc))
+    return {'result': phys, 'priorc': priorc, 'epi': epi, 'order': order_contribution}
 
 def error_budget(s,result_list):
     err = dict()
@@ -433,7 +448,7 @@ class plot_chiral_fit():
                 sdev = np.array([i.sdev for i in extrap])
                 ax.fill_between(priorx['epi'],mean+sdev,mean-sdev,alpha=0.4,label=label[n])
             fitc.n = init_order
-            return ax
+            return ax, phys_converge
         # chiral extrapolation
         def c_chiral(ax,result):
             fit = result['fit']
@@ -512,6 +527,7 @@ class plot_chiral_fit():
             return None
         ### Chiral extrapolation
         r_chiral = dict()
+        r_converge = dict()
         for ansatz_truncate in s['ansatz']['type']:
             if ansatz_truncate.split('_')[0] in ['xpt-delta']:
                 print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
@@ -545,7 +561,8 @@ class plot_chiral_fit():
             ### Convergence
             fig = plt.figure('%s chiral convergence' %ansatz_truncate,figsize=(7,4.326237))
             ax = plt.axes([0.15,0.15,0.8,0.8])
-            ax = plot_convergence(result,xp,ansatz_truncate.split('_')[0])
+            ax, phys_converge = plot_convergence(result,xp,ansatz_truncate.split('_')[0])
+            r_converge[ansatz_truncate] = phys_converge
             # plot physical pion point
             epi_phys = result['phys']['epi']
             ax.axvspan(epi_phys.mean-epi_phys.sdev, epi_phys.mean+epi_phys.sdev, alpha=0.4, color='#a6aaa9')
@@ -564,7 +581,7 @@ class plot_chiral_fit():
             if s['save_figs']:
                 plt.savefig('%s/convergence_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
-        return r_chiral
+        return r_chiral, r_converge
     def plot_continuum(self,s,data,result_list):
         def a_chiral(ax,result):
             fit = result['fit']
