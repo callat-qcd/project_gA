@@ -5,7 +5,7 @@ plt.rc('text', usetex=True)
 f = open('./data/stability.csv','r')
 next(f)
 #fig = plt.figure('chiral extrapolation',figsize=(7,4.326237))
-fig = plt.figure('chiral extrapolation',figsize=(7,5))
+fig = plt.figure('chiral extrapolation',figsize=(7,5.5))
 ax0 = plt.axes([0.25,0.15,0.4,0.8])
 ax1 = plt.axes([0.66,0.15,0.14,0.8])
 ax2 = plt.axes([0.81,0.15,0.14,0.8])
@@ -44,18 +44,18 @@ for l in f:
         lgbf_list.append(logGBF)
         if logGBF > lgbf_max and logGBF not in [10000]:
             lgbf_max = logGBF
-        #if label=='NNNLO $\chi$PT':
-        #    ax0.errorbar(x=mean,xerr=sdev,y=y,ls='None',marker='s',fillstyle='full',markersize='5',elinewidth=1,capsize=2,color='black',mew=1)
-        #    ax1.errorbar(x=chi2dof,y=y,ls='None',marker='s',fillstyle='full',markersize='5',elinewidth=1,capsize=2,color='black',mew=1)
-        #    ax1.axvline(x=chi2dof,ls='--',color='black')
-        #    ax2.errorbar(x=logGBF,y=y,ls='None',marker='s',fillstyle='full',markersize='5',elinewidth=1,capsize=2,color='black',mew=1)
-        #    ax2.axvline(x=logGBF,ls='--',color='black')
         lbl = label
         mrk = 'o'
+        clr = 'k'
+        alpha=0.5
+        if label in ['N3LO $\chi$PT','NLO $\chi$PT w/$\Delta$']:
+            alpha = 1
+            clr = '#b36ae2'
         if avg:
             mfc = '#b36ae2'
-            #lbl = r'\textbf{%s}' %label
+            clr = '#b36ae2'
             mrk = 's'
+            alpha=1
         else:
             mfc = 'None'
         if label=='weighted avg':
@@ -63,10 +63,12 @@ for l in f:
             clr = 'k'
             mfc = 'k'
             lbl = r"\textbf{model avg}"
-        else:
-            clr = '#b36ae2'
-        ax0.errorbar(x=mean,xerr=sdev,y=y,ls='None',marker=mrk,mfc=mfc,markersize='5',elinewidth=1,capsize=2,color=clr,mew=1)
-        ax1.errorbar(x=chi2dof,y=y,ls='None',marker=mrk,mfc=mfc,markersize='5',elinewidth=1,capsize=2,color=clr,mew=1)
+            alpha=1
+
+        ax0.errorbar(x=mean,xerr=sdev,y=y,ls='None',marker=mrk,mfc=mfc,markersize='5',\
+            elinewidth=1,capsize=2,color=clr,mew=1,alpha=alpha)
+        ax1.errorbar(x=chi2dof,y=y,ls='None',marker=mrk,mfc=mfc,markersize='5',\
+            elinewidth=1,capsize=2,color=clr,mew=1,alpha=alpha)
         #ax2.errorbar(x=logGBF,y=y,ls='None',marker=mrk,mfc=mfc,markersize='5',elinewidth=1,capsize=2,color=clr,mew=1)
         ticklabels.append(lbl)
 bf = np.exp(np.array(lgbf_list)-np.array(lgbf_max))
