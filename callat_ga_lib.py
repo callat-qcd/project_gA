@@ -689,7 +689,7 @@ class plot_chiral_fit():
                 xsb = s['ansatz']['xsb']
                 alpha = s['ansatz']['alpha']
                 FV = s['ansatz']['FV']
-                mpiL_extrap = np.linspace(0.001,10.201,10201)
+                mpiL_extrap = np.linspace(0.1,6,100)
                 fitc = fit_class(ansatz,truncate,xsb,alpha,mpiL_extrap,FV)
                 x = {'afs': 0}
                 priorx = dict()
@@ -703,6 +703,9 @@ class plot_chiral_fit():
                 extrap = fitc.fit_function(x,priorx)
                 mean = np.array([j.mean for j in extrap])
                 sdev = np.array([j.sdev for j in extrap])
+                #print mpiL_extrap
+                #print mean
+                #print sdev
                 mpiL_extrap_plot = np.exp(-mpiL_extrap)/np.sqrt(mpiL_extrap)
                 ax.fill_between(mpiL_extrap_plot,mean+sdev,mean-sdev,alpha=0.4,color='#70bf41')
                 ax.errorbar(x=mpiL_extrap_plot,y=mean,ls='--',marker='',elinewidth=1,color='#70bf41',label='NLO $\chi$PT prediction')
