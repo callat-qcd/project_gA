@@ -344,7 +344,7 @@ def bma(switches,result,fverror,isospin):
     final_error = np.sqrt(gA.sdev**2 + fverror**2 + isospin**2)
     additional_var = {'fv':fverror**2, 'isospin':isospin**2, 'model': model_var,'total':final_error**2}
     model_budget = modelavg_error(switches,result,gA,additional_var)
-    error = {'E(gA)': gA.mean, 's(gA)': final_error, 's(Mk)': np.sqrt(model_var), 'weights': wd, 'error_budget': model_budget, 'gA_dict':gA_dict}
+    error = {'E(gA)': gA.mean, 's(gA)': final_error, 's(Mk)': np.sqrt(model_var), 'wd': wd, 'error_budget': model_budget, 'gA_dict':gA_dict}
     plot_params = {'x':x, 'pdf':pdf, 'pdfdict':pdfdict, 'cdf':cdf, 'cdfdict':cdfdict}
     return error, plot_params
 

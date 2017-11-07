@@ -9,15 +9,13 @@ True,NNLO Taylor $\epsilon_\pi^2$, 1.28239642854, 0.0139769780666, 0.86125153751
 True,NLO Taylor $\epsilon_\pi$, 1.27989214124, 0.0100354241012, 0.87931588313, 26.3379330227
 True,NNLO Taylor $\epsilon_\pi$, 1.28414169619, 0.0138099556444, 0.866275793196, 26.235457776
 break
-False,2xLO width, 1.277655, 0.012189, -10, 10000
-False,+2xNLO width, 1.277738, 0.012165, -10, 10000
-False,+2xNNLO width, 1.278644, 0.013364, -10, 10000
-break
-False,$\mathrm{O}(10)$ NNNLOa, 1.276874, 0.012977, -10, 10000
-False,+$\mathrm{O}(\alpha_s a^2)$ disc., 1.276875, 0.012977, -10, 10000
-False,+$\mathrm{O}(a)$ disc., 1.276875, 0.012977, -10, 10000
+False,+$\mathrm{O}(\alpha_s a^2)$ disc., 1.277647, 0.012184, -10, 10000
+False,+$\mathrm{O}(a)$ disc., 1.277647, 0.012184, -10, 10000
 break
 False,omit NLO FV, 1.278001, 0.012264, -10, 10000
+break
+False,$2\times$LO width, 1.277655, 0.012189, -10, 10000
+False,$2\times$ all widths, 1.278644, 0.013364, -10, 10000
 break
 False,$m_\pi\leq$ 350 MeV, 1.286336, 0.013055, -10, 10000
 False,$m_\pi\leq$ 310 MeV, 1.284351, 0.015892, -10, 10000
