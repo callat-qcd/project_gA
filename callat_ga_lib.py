@@ -720,9 +720,6 @@ class plot_chiral_fit():
                 extrap = fitc.fit_function(x,priorx)
                 mean = np.array([j.mean for j in extrap])
                 sdev = np.array([j.sdev for j in extrap])
-                #print mpiL_extrap
-                #print mean
-                #print sdev
                 mpiL_extrap_plot = np.exp(-mpiL_extrap)/np.sqrt(mpiL_extrap)
                 ax.fill_between(mpiL_extrap_plot,mean+sdev,mean-sdev,alpha=0.4,color='#70bf41')
                 ax.errorbar(x=mpiL_extrap_plot,y=mean,ls='--',marker='',elinewidth=1,color='#70bf41',label='NLO $\chi$PT prediction')

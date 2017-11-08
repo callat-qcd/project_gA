@@ -48,7 +48,7 @@ for l in f:
         mrk = 'o'
         clr = 'k'
         alpha=0.5
-        if label in ['N3LO $\chi$PT','NLO $\chi$PT w/$\Delta$']:
+        if label in ['N3LO $\chi$PT','NLO $\chi$PT($\Delta$)']:
             alpha = 1
             clr = '#b36ae2'
         if avg:
