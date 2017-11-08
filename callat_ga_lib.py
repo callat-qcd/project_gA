@@ -305,10 +305,10 @@ def error_budget(s,result_list):
         for key in prior.keys():
             ks = key.split('_')
             k = ks[-1]
-            if k[0] in ['c','b','g'] and ansatz_truncate in key:
+            if k[0] in ['c','g'] and ansatz_truncate in key:
                 X_list.append(prior[key])
                 k_list.append(key)
-            if k[0] in ['a','s'] and ansatz_truncate in key:
+            if k[0] in ['a','s','b'] and ansatz_truncate in key:
                 d_list.append(prior[key])
                 k_list.append(key)
         chiral      = phys.partialsdev(*X_list)
@@ -813,6 +813,7 @@ class plot_chiral_fit():
         ax.legend(fontsize=12,edgecolor='k',fancybox=False)
         ax.set_ylim(bottom=0)
         ax.set_xlim([1.225,1.335])
+        ax.set_xlabel('$g_A$', fontsize=20)
         frame = plt.gca()
         frame.axes.get_yaxis().set_visible(False)
         ax.xaxis.set_tick_params(labelsize=16)
