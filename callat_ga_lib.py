@@ -305,10 +305,10 @@ def error_budget(s,result_list):
         for key in prior.keys():
             ks = key.split('_')
             k = ks[-1]
-            if k[0] in ['c','b','g'] and ansatz_truncate in key:
+            if k[0] in ['c','g'] and ansatz_truncate in key:
                 X_list.append(prior[key])
                 k_list.append(key)
-            if k[0] in ['a','s'] and ansatz_truncate in key:
+            if k[0] in ['a','s','b'] and ansatz_truncate in key:
                 d_list.append(prior[key])
                 k_list.append(key)
         chiral      = phys.partialsdev(*X_list)
