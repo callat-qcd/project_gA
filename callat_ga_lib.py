@@ -7,6 +7,25 @@ import lsqfit
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
 
+ens_abbr = {
+    'a15m400' :'l1648f211b580m0217m065m838',
+    'a12m400' :'l2464f211b600m0170m0509m635',
+    'a09m400' :'l3264f211b630m0124m037m440',
+    'a15m350' :'l1648f211b580m0166m065m838',
+    'a12m350' :'l2464f211b600m0130m0509m635',
+    'a09m350' :'l3264f211b630m00945m037m440',
+    'a15m310' :'l1648f211b580m013m065m838',
+    'a12m310' :'l2464f211b600m0102m0509m635',
+    'a09m310' :'l3296f211b630m0074m037m440',
+    'a15m220' :'l2448f211b580m0064m0640m828',
+    'a12m220' :'l3264f211b600m00507m0507m628',
+    'a12m220S':'l2464f211b600m00507m0507m628',
+    'a12m220L':'l4064f211b600m00507m0507m628',
+    'a09m220' :'l4896f211b630m00363m0363m430',
+    'a15m130' :'l3248f211b580m00235m0647m831',
+    'a12m130' :'l4864f211b600m00184m0507m628',
+    }
+
 def format_data(switches, gadf, hqdf):
     gar_list = []
     epi_list = []
@@ -14,7 +33,8 @@ def format_data(switches, gadf, hqdf):
     afs_list = []
     mpl_list = []
     ed_list  = []
-    for ens in switches['ensembles']:
+    for e in switches['ensembles']:
+        ens = ens_abbr[e]
         gar = gadf.query("ensemble=='%s'" %ens).sort_values(by='nbs')['ga'].as_matrix()
         epi = gadf.query("ensemble=='%s'" %ens).sort_values(by='nbs')['epi'].as_matrix()
         mpl = gadf.query("ensemble=='%s' and nbs==0" %ens)['mpil'].as_matrix()[0]
@@ -433,7 +453,7 @@ class plot_chiral_fit():
                 tn = fitc.n
                 order = range(1,tn+1)
             ls_list = ['-','--','-.',':']
-            label = ['LO','NLO','NNLO','N3LO']
+            label = ['LO','NLO','NNLO','NNLO+ct']
             phys_converge = []
             for n in range(tn):
                 fitc.n = order[n]
@@ -507,13 +527,14 @@ class plot_chiral_fit():
             datax = []
             datay = []
             elist = []
-            for i,e in enumerate(s['ensembles']):
-                dx = s['x_shift'][e]
+            for i,ens in enumerate(s['ensembles']):
+                e = ens_abbr[ens]
+                dx = s['x_shift'][ens]
                 ax.errorbar(x=x[i].mean+dx,xerr=x[i].sdev,y=y[i].mean,yerr=y[i].sdev,\
                     ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
                 datax.append(x[i])
                 datay.append(y[i])
-                elist.append(e)
+                elist.append(ens)
             return ax, {'x':np.array(x),'y':np.array(y),'ens':np.array(elist)}
         def c_pdg(ax,result):
             gA_pdg = [1.2723, 0.0023]
@@ -649,7 +670,8 @@ class plot_chiral_fit():
             xlist = []
             ylist = []
             elist = []
-            for i,e in enumerate(s['ensembles']):
+            for i,ens in enumerate(s['ensembles']):
+                e = ens_abbr[ens]
                 xplot = x[i]**2/(4.*np.pi)
                 ax.errorbar(x=xplot.mean,xerr=xplot.sdev,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'])
                 xlist.append(xplot)
@@ -732,8 +754,9 @@ class plot_chiral_fit():
                 xlist = []
                 ylist = []
                 elist = []
-                for i,e in enumerate(s['ensembles']):
-                    if e in ['l2464f211b600m00507m0507m628','l3264f211b600m00507m0507m628','l4064f211b600m00507m0507m628']:
+                for i,ens in enumerate(s['ensembles']):
+                    e = ens_abbr[ens]
+                    if ens in ['a12m220S','a12m220','a12m220L']:
                         xplot = np.exp(-x[i])/np.sqrt(x[i])
                         ax.errorbar(x=xplot,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
                         xlist.append(xplot)
@@ -784,15 +807,16 @@ class plot_chiral_fit():
         # '-','--','-.',':'
         # #ec5d57 #70bf41 #51a7f9
         p = dict()
-        p['taylor_2'] = {'color':'#ec5d57','ls':'--','tag':'NLO Taylor $\epsilon_\pi^2$'}
-        p['taylor_4'] = {'color':'#ec5d57','ls':':','tag':'NNLO Taylor $\epsilon_\pi^2$'}
-        p['xpt_3']    = {'color':'#70bf41','ls':'--','tag':'NNLO $\chi$PT'}
-        p['xpt_4']    = {'color':'#70bf41','ls':':','tag':'N3LO $\chi$PT'}
-        p['linear_2'] = {'color':'#51a7f9','ls':'--','tag':'NLO Taylor $\epsilon_\pi$'}
-        p['linear_4'] = {'color':'#51a7f9','ls':':','tag':'NNLO Taylor $\epsilon_\pi$'}
+        p['taylor_2']    = {'color':'#ec5d57','ls':'--','tag':'NLO Taylor $\epsilon_\pi^2$'}
+        p['taylor_4']    = {'color':'#ec5d57','ls':':','tag':'NNLO Taylor $\epsilon_\pi^2$'}
+        p['xpt_3']       = {'color':'#70bf41','ls':'--','tag':'NNLO $\chi$PT'}
+        p['xpt_4']       = {'color':'#70bf41','ls':':','tag':'NNLO+ct $\chi$PT'}
+        p['xpt-full_4']  = {'color':'#70bf41','ls':'-','tag':'N3LO $\chi$PT'}
+        p['linear_2']    = {'color':'#51a7f9','ls':'--','tag':'NLO Taylor $\epsilon_\pi$'}
+        p['linear_4']    = {'color':'#51a7f9','ls':':','tag':'NNLO Taylor $\epsilon_\pi$'}
         p['xpt-delta_2'] = {'color':'#70bf41','ls':'--','tag':'NLO $\Delta\chi$PT'}
         p['xpt-delta_3'] = {'color':'#70bf41','ls':':','tag':'NNLO $\Delta\chi$PT'}
-        p['xpt-delta_4'] = {'color':'#70bf41','ls':'-.','tag':'N3LO $\Delta\chi$PT'}
+        p['xpt-delta_4'] = {'color':'#70bf41','ls':'-.','tag':'NNLO+ct $\Delta\chi$PT'}
         fig = plt.figure('result histogram',figsize=(7,4.326237))
         ax = plt.axes([0.15,0.15,0.8,0.8])
         ax.fill_between(x=x,y1=ysum,facecolor='#b36ae2',edgecolor='black',alpha=0.4,label='model average')
@@ -828,6 +852,9 @@ class plot_chiral_fit():
         ya = {0:0,1:0,2:0}
         d = 0
         for k in wd.keys():
+            if k.split('_')[0] in ['xpt-delta']:
+                print('CAN NOT PRINT: eps_delta(eps_pi) = unknown')
+                continue
             y += wd[k]*r_chiral[k]['r0']['y']
             d += wd[k]*r_chiral[k]['rd']['y']
             for a in r_chiral[k]['ra'].keys():
@@ -855,8 +882,9 @@ class plot_chiral_fit():
             #print i
             ax.errorbar(x=r_chiral[k]['r0']['epi'],y=[j.mean for j in ya[i]],ls='-',marker='',elinewidth=1,color=color_list[idx],label=label[idx])
         # data
-        for i,e in enumerate(r_chiral[k]['rd']['ens']):
-            dx = s['x_shift'][e]
+        for i,ens in enumerate(r_chiral[k]['rd']['ens']):
+            e = ens_abbr[ens]
+            dx = s['x_shift'][ens]
             ax.errorbar(x=r_chiral[k]['rd']['x'][i].mean+dx,y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
         # pdg
         gA_pdg = [1.2723, 0.0023]
