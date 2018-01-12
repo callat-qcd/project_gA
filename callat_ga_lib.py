@@ -54,34 +54,41 @@ def format_data(switches, gadf, hqdf):
     return data
 
 class fit_class():
-    def __init__(self,ansatz,truncate,xsb,alpha,mL,FV):
-        self.ansatz = ansatz
-        self.n = truncate
-        self.xsb = xsb
-        self.alpha = alpha
-        self.FV = FV
-        self.at = '%s_%s' %(ansatz,truncate)
+    def __init__(self,sdict):
+        self.ansatz = sdict['ansatz']
+        self.n = sdict['truncate']
+        self.xsb = sdict['xsb']
+        self.alpha = sdict['alpha']
+        self.FV = sdict['FV']
+        self.FVn = sdict['FVn']
+        self.at = '%s_%s' %(sdict['ansatz'],sdict['truncate'])
         # FV Bessel functions
         cn = np.array([6,12,8,6,24,24,0,12,30,24,24,8,24,48,0,6,48,36,24,24]) # |n| multiplicity
-        mLn = [i*np.sqrt(np.arange(1,len(cn)+1)) for i in mL]
+        mLn = [i*np.sqrt(np.arange(1,len(cn)+1)) for i in sdict['mL']]
         kn0 = spsp.kn(0, mLn)
         kn1 = spsp.kn(1, mLn)
-        self.F1 = np.array([np.sum(cn*kn0[i]-cn*kn1[i]/mLn[i]) for i in range(len(mL))])
-        self.F3 = -1.5*np.array([np.sum(cn*kn1[i]/mLn[i]) for i in range(len(mL))])
+        self.F1 = np.array([np.sum(cn*kn0[i]-cn*kn1[i]/mLn[i]) for i in range(len(sdict['mL']))])
+        self.F3 = -1.5*np.array([np.sum(cn*kn1[i]/mLn[i]) for i in range(len(sdict['mL']))])
         return None
     def get_priors(self,p,prior):
         a = self.ansatz.split('-')[0]
         for k in p[a].keys():
+            mean = p[a][k].mean
+            sdev = p[a][k].sdev
             if int(k[-1]) <= self.n:
-                mean = p[a][k].mean
-                sdev = p[a][k].sdev
+                prior['%s_%s' %(self.at,k)] = gv.gvar(mean,sdev)
+            elif int(k[-1]) <= self.FVn and k[0] is 'f':
                 prior['%s_%s' %(self.at,k)] = gv.gvar(mean,sdev)
             else: pass
         return prior
     def dfv(self,p):
         epi = p['epi']
-        g0 = p['%s_g0' %self.at]
-        r = 8./3.*epi**2*(g0**3*self.F1+g0*self.F3)
+        if self.FVn >= 2:
+            g0 = p['%s_g0' %self.at]
+            r = 8./3.*epi**2*(g0**3*self.F1+g0*self.F3)
+        if self.FVn >= 3:
+            f3 = p['%s_f3' %self.at]
+            r += f3*epi**3*(self.F1) #+self.F3)
         return r
     def R(self,zz):
         try:
@@ -251,20 +258,22 @@ class fit_class():
 def fit_data(s,p,data,phys):
     x = data['x']
     y = data['y']['gar']
-    ansatz_list = s['ansatz']['type']
-    xsb = s['ansatz']['xsb']
-    alpha = s['ansatz']['alpha']
-    FV = s['ansatz']['FV']
     result = dict()
-    for ansatz_truncate in ansatz_list:
-        ansatz = ansatz_truncate.split('_')[0]
-        truncate = int(ansatz_truncate.split('_')[1])
-        fitc = fit_class(ansatz,truncate,xsb,alpha,data['mpl'],FV)
+    # get all priors
+    for ansatz_truncate in s['ansatz']['type']:
+        sdict = dict(s['ansatz'])
+        sdict['ansatz'] = ansatz_truncate.split('_')[0]
+        sdict['truncate'] = int(ansatz_truncate.split('_')[1])
+        sdict['mL'] = data['mpl']
+        fitc = fit_class(sdict)
         prior = fitc.get_priors(p,data['prior'])
-    for ansatz_truncate in ansatz_list:
-        ansatz = ansatz_truncate.split('_')[0]
-        truncate = int(ansatz_truncate.split('_')[1])
-        fitc = fit_class(ansatz,truncate,xsb,alpha,data['mpl'],FV)
+    # chain fit models
+    for ansatz_truncate in s['ansatz']['type']:
+        sdict = dict(s['ansatz'])
+        sdict['ansatz'] = ansatz_truncate.split('_')[0]
+        sdict['truncate'] = int(ansatz_truncate.split('_')[1])
+        sdict['mL'] = data['mpl']
+        fitc = fit_class(sdict)
         fit = lsqfit.nonlinear_fit(data=(x,y),prior=prior,fcn=fitc.fit_function)
         phys_pt = eval_phys(phys,fitc,fit)
         result[ansatz_truncate] = {'fit':fit, 'phys':phys_pt, 'fitc': fitc}
@@ -315,10 +324,11 @@ def error_budget(s,result_list):
         phys = result['phys']['result']
         statistical = phys.partialsdev(fit.y)
         inputerror = phys.partialsdev(priorc['epi'],priorc['ed'])
-        # compile chiral and discretization lists then splat as function input
+        # compile chiral and discretization and finite volume lists then splat as function input
         X_list = []
         d_list = []
         k_list = []
+        v_list = []
         at = ansatz_truncate.split('_')
         ansatz = at[0]
         n = int(at[1])
@@ -331,14 +341,21 @@ def error_budget(s,result_list):
             if k[0] in ['a','s','b'] and ansatz_truncate in key:
                 d_list.append(prior[key])
                 k_list.append(key)
+            if s['ansatz']['FVn'] is 3 and k[0] in ['f'] and ansatz_truncate in key:
+                v_list.append(prior[key])
+                k_list.append(key)
         chiral      = phys.partialsdev(*X_list)
         disc        = phys.partialsdev(*d_list)
-        pct = {'stat':[statistical/phys.mean*100],'chiral':[chiral/phys.mean*100],'disc':[disc/phys.mean*100],'input':[inputerror/phys.mean*100],'total':[phys.sdev/phys.mean*100]}
-        std = {'stat':statistical,'chiral':chiral,'disc':disc,'input':inputerror,'total':phys.sdev}
+        if s['ansatz']['FVn'] is 3:
+            fv = phys.partialsdev(*v_list)
+        else:
+            fv = 0
+        pct = {'stat':[statistical/phys.mean*100],'chiral':[chiral/phys.mean*100],'disc':[disc/phys.mean*100],'fv':[fv/phys.mean*100],'input':[inputerror/phys.mean*100],'total':[phys.sdev/phys.mean*100]}
+        std = {'stat':statistical,'chiral':chiral,'disc':disc,'fv':fv,'input':inputerror,'total':phys.sdev}
         err[ansatz_truncate] = {'pct':pct,'std':std,'mean':phys.mean}
     return err
 
-def bma(switches,result,fverror,isospin):
+def bma(switches,result,isospin):
     # read Bayes Factors
     logGBF_list = []
     for a in switches['ansatz']['type']:
@@ -376,8 +393,8 @@ def bma(switches,result,fverror,isospin):
     gA_lst = np.array(gA_lst)
     w_lst = np.array(w_lst)
     model_var = np.sum(w_lst*(gA_lst**2 - gA.mean**2))
-    final_error = np.sqrt(gA.sdev**2 + fverror**2 + isospin**2)
-    additional_var = {'fv':fverror**2, 'isospin':isospin**2, 'model': model_var,'total':final_error**2}
+    final_error = np.sqrt(gA.sdev**2 + isospin**2)
+    additional_var = {'isospin':isospin**2, 'model': model_var,'total':final_error**2}
     model_budget = modelavg_error(switches,result,gA,additional_var)
     error = {'E(gA)': gA.mean, 's(gA)': final_error, 's(Mk)': np.sqrt(model_var), 'weights': wd, 'error_budget': model_budget, 'gA_dict':gA_dict}
     plot_params = {'x':x, 'pdf':pdf, 'pdfdict':pdfdict, 'cdf':cdf, 'cdfdict':cdfdict}
@@ -392,6 +409,7 @@ def modelavg_error(s,result_list,ga,var):
     statistical = ga.partialsdev(fit.y,phys_epi,phys_ed)
     X_list = []
     d_list = []
+    v_list = []
     k_list = []
     for key in prior.keys():
         ks = key.split('_')
@@ -402,11 +420,21 @@ def modelavg_error(s,result_list,ga,var):
         if k[0] in ['a','s'] and key not in ['aw0']:
             d_list.append(prior[key])
             k_list.append(key)
+        if s['ansatz']['FVn'] is 3 and k[0] in ['f'] and key in ['xpt_3_f3']:
+            v_list.append(prior[key])
+            k_list.append(key)
     chiral      = ga.partialsdev(*X_list)
     disc        = ga.partialsdev(*d_list)
-    total = np.sqrt(ga.sdev**2+var['fv']+var['isospin']+var['model'])
-    pct = {'stat':[statistical/ga.mean*100],'chiral':[chiral/ga.mean*100],'disc':[disc/ga.mean*100],'FV':[np.sqrt(var['fv'])/ga.mean*100],'isospin':[np.sqrt(var['isospin'])/ga.mean*100],'model':[np.sqrt(var['model'])/ga.mean*100],'total':[total/ga.mean*100]}
-    std = {'stat':statistical,'chiral':chiral,'disc':disc,'fv':np.sqrt(var['fv']),'isospin':np.sqrt(var['isospin']),'total_fit':ga.sdev,'total':total}
+    if s['ansatz']['FVn'] is 3:
+        fv = ga.partialsdev(*v_list)
+    else:
+        fv = 0
+    print('fv:',fv)
+    print('fv pct:',fv/ga.mean*100)
+    print(k_list)
+    total = np.sqrt(ga.sdev**2+var['isospin']+var['model'])
+    pct = {'stat':[statistical/ga.mean*100],'chiral':[chiral/ga.mean*100],'disc':[disc/ga.mean*100],'fv':[fv/ga.mean*100],'isospin':[np.sqrt(var['isospin'])/ga.mean*100],'model':[np.sqrt(var['model'])/ga.mean*100],'total':[total/ga.mean*100]}
+    std = {'stat':statistical,'chiral':chiral,'disc':disc,'fv':fv,'isospin':np.sqrt(var['isospin']),'total_fit':ga.sdev,'total':total}
     return {'pct':pct,'std':std,'mean':ga.mean}
 
 class plot_chiral_fit():
@@ -518,11 +546,11 @@ class plot_chiral_fit():
             ax.fill_between(epi_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi,a=0)$')
             ax.errorbar(x=epi_extrap,y=mean,ls='--',marker='',elinewidth=1,color='#b36ae2')
             return ax, {'x':x, 'priorx':priorx}, {'epi':epi_extrap,'y':extrap}
-        def c_data(ax,s,result):
+        def c_data(ax,s,result,local_FV_switch=False):
             x = result['fit'].prior['epi']
-            if s['ansatz']['FV']:
+            if s['ansatz']['FV'] is True or local_FV_switch is True:
                 y = result['fit'].y - result['fitc'].dfv(result['fit'].p)
-            else:
+            elif s['ansatz']['FV'] is False or local_FV_switch is False:
                 y = result['fit'].y
             datax = []
             datay = []
@@ -725,13 +753,12 @@ class plot_chiral_fit():
         if s['ansatz']['FV']:
             def v_vol(ax,s,result,ansatz_truncate):
                 fit = result['fit']
-                ansatz = ansatz_truncate.split('_')[0]
-                truncate = int(ansatz_truncate.split('_')[1])
-                xsb = s['ansatz']['xsb']
-                alpha = s['ansatz']['alpha']
-                FV = s['ansatz']['FV']
                 mpiL_extrap = np.linspace(3,10,500)
-                fitc = fit_class(ansatz,truncate,xsb,alpha,mpiL_extrap,FV)
+                sdict = dict(s['ansatz'])
+                sdict['ansatz'] = ansatz_truncate.split('_')[0]
+                sdict['truncate'] = int(ansatz_truncate.split('_')[1])
+                sdict['mL'] = mpiL_extrap
+                fitc = fit_class(sdict)
                 x = {'afs': 0}
                 priorx = dict()
                 for k in fit.p.keys():
