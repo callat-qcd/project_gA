@@ -83,9 +83,10 @@ class fit_class():
         return prior
     def dfv(self,p):
         epi = p['epi']
+        r = 0.
         if self.FVn >= 2:
             g0 = p['%s_g0' %self.at]
-            r = 8./3.*epi**2*(g0**3*self.F1+g0*self.F3)
+            r += 8./3.*epi**2*(g0**3*self.F1+g0*self.F3)
         if self.FVn >= 3:
             f3 = p['%s_f3' %self.at]
             r += f3*epi**3*(self.F1) #+self.F3)
