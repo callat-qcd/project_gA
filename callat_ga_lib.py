@@ -322,8 +322,7 @@ def error_budget(s,result_list):
         prior = fit.prior
         priorc = result['phys']['priorc']
         phys = result['phys']['result']
-        statistical = phys.partialsdev(fit.y)
-        inputerror = phys.partialsdev(priorc['epi'],priorc['ed'])
+        statistical = phys.partialsdev(fit.y,priorc['epi'],priorc['ed'])
         # compile chiral and discretization and finite volume lists then splat as function input
         X_list = []
         d_list = []
@@ -350,8 +349,8 @@ def error_budget(s,result_list):
             fv = phys.partialsdev(*v_list)
         else:
             fv = 0
-        pct = {'stat':[statistical/phys.mean*100],'chiral':[chiral/phys.mean*100],'disc':[disc/phys.mean*100],'fv':[fv/phys.mean*100],'input':[inputerror/phys.mean*100],'total':[phys.sdev/phys.mean*100]}
-        std = {'stat':statistical,'chiral':chiral,'disc':disc,'fv':fv,'input':inputerror,'total':phys.sdev}
+        pct = {'stat':[statistical/phys.mean*100],'chiral':[chiral/phys.mean*100],'disc':[disc/phys.mean*100],'fv':[fv/phys.mean*100],'total':[phys.sdev/phys.mean*100]}
+        std = {'stat':statistical,'chiral':chiral,'disc':disc,'fv':fv,'total':phys.sdev}
         err[ansatz_truncate] = {'pct':pct,'std':std,'mean':phys.mean}
     return err
 
@@ -376,13 +375,17 @@ def bma(switches,result,isospin):
     cdfdict = dict()
     # for plotting
     x = np.linspace(1.222,1.352,13000)
+    # error breakdown for each model
+    model_error = error_budget(switches,result)
+    model_budget = {k:0 for k in model_error[list(model_error.keys())[0]]['std'].keys()}
     for a in switches['ansatz']['type']:
         r = result[a]['phys']['result']
         gA_dict[a] = r
         w = 1/sum(np.exp(np.array(logGBF_list)-result[a]['fit'].logGBF))
+        sqrtw = np.sqrt(w) # sqrt scales the std dev correctly
         wd[a] = w
         w_lst.append(w)
-        gA += w*r
+        gA += gv.gvar(w*r.mean,sqrtw*r.sdev)
         gA_lst.append(r.mean)
         p = stats.norm.pdf(x,r.mean,r.sdev)
         pdf += w*p
@@ -390,52 +393,20 @@ def bma(switches,result,isospin):
         c = stats.norm.cdf(x,r.mean,r.sdev)
         cdf += w*c
         cdfdict[a] = w*c
+        # error breakdown
+        model_std = model_error[a]['std']
+        model_budget = {k:model_budget[k]+w*model_std[k]**2 for k in model_std} # variance breakdown of model average
     gA_lst = np.array(gA_lst)
     w_lst = np.array(w_lst)
-    model_var = np.sum(w_lst*(gA_lst**2 - gA.mean**2))
+    model_var = np.sum(w_lst*gA_lst**2) - gA.mean**2
     final_error = np.sqrt(gA.sdev**2 + isospin**2)
-    additional_var = {'isospin':isospin**2, 'model': model_var,'total':final_error**2}
-    model_budget = modelavg_error(switches,result,gA,additional_var)
-    error = {'E(gA)': gA.mean, 's(gA)': final_error, 's(Mk)': np.sqrt(model_var), 'weights': wd, 'error_budget': model_budget, 'gA_dict':gA_dict}
+    model_budget['isospin'] = isospin**2
+    model_budget['model'] = model_var
+    model_budget['total'] = model_budget['total']+model_budget['isospin']+model_budget['model'] # add in quadrature isospin and model variance
+    pct_budget = {k:[np.sqrt(model_budget[k])/gA.mean*100] for k in model_budget} # percent breakdown of model average
+    error = {'E(gA)': gA.mean, 's(gA)': final_error, 's(Mk)': np.sqrt(model_var), 'weights': wd, 'error_budget': model_budget, 'pct_budget': pct_budget, 'gA_dict':gA_dict}
     plot_params = {'x':x, 'pdf':pdf, 'pdfdict':pdfdict, 'cdf':cdf, 'cdfdict':cdfdict}
     return error, plot_params
-
-def modelavg_error(s,result_list,ga,var):
-    result = result_list[s['ansatz']['type'][-1]]
-    fit = result['fit']
-    prior = fit.prior
-    phys_epi = result['phys']['priorc']['epi']
-    phys_ed = result['phys']['priorc']['ed']
-    statistical = ga.partialsdev(fit.y,phys_epi,phys_ed)
-    X_list = []
-    d_list = []
-    v_list = []
-    k_list = []
-    for key in prior.keys():
-        ks = key.split('_')
-        k = ks[-1]
-        if k[0] in ['c','b','g']:
-            X_list.append(prior[key])
-            k_list.append(key)
-        if k[0] in ['a','s'] and key not in ['aw0']:
-            d_list.append(prior[key])
-            k_list.append(key)
-        if s['ansatz']['FVn'] is 3 and k[0] in ['f'] and key in ['xpt_3_f3']:
-            v_list.append(prior[key])
-            k_list.append(key)
-    chiral      = ga.partialsdev(*X_list)
-    disc        = ga.partialsdev(*d_list)
-    if s['ansatz']['FVn'] is 3:
-        fv = ga.partialsdev(*v_list)
-    else:
-        fv = 0
-    print('fv:',fv)
-    print('fv pct:',fv/ga.mean*100)
-    print(k_list)
-    total = np.sqrt(ga.sdev**2+var['isospin']+var['model'])
-    pct = {'stat':[statistical/ga.mean*100],'chiral':[chiral/ga.mean*100],'disc':[disc/ga.mean*100],'fv':[fv/ga.mean*100],'isospin':[np.sqrt(var['isospin'])/ga.mean*100],'model':[np.sqrt(var['model'])/ga.mean*100],'total':[total/ga.mean*100]}
-    std = {'stat':statistical,'chiral':chiral,'disc':disc,'fv':fv,'isospin':np.sqrt(var['isospin']),'total_fit':ga.sdev,'total':total}
-    return {'pct':pct,'std':std,'mean':ga.mean}
 
 class plot_chiral_fit():
     def __init__(self):
