@@ -72,7 +72,8 @@ class fit_class():
         self.F1 = np.array([np.sum(cn*kn0[i]-cn*kn1[i]/mLn[i]) for i in range(len(sdict['mL']))])
         self.F3 = -1.5*np.array([np.sum(cn*kn1[i]/mLn[i]) for i in range(len(sdict['mL']))])
         return None
-    def get_priors(self,p,prior):
+    def get_priors(self,p,data_prior):
+        prior = dict(data_prior)
         a = self.ansatz.split('-')[0]
         for k in p[a].keys():
             mean = p[a][k].mean
@@ -263,13 +264,13 @@ def fit_data(s,p,data,phys):
     y = data['y']['gar']
     result = dict()
     # get all priors
-    for ansatz_truncate in s['ansatz']['type']:
-        sdict = dict(s['ansatz'])
-        sdict['ansatz'] = ansatz_truncate.split('_')[0]
-        sdict['truncate'] = int(ansatz_truncate.split('_')[1])
-        sdict['mL'] = data['mpl']
-        fitc = fit_class(sdict)
-        prior = fitc.get_priors(p,data['prior'])
+    #for ansatz_truncate in s['ansatz']['type']:
+    #    sdict = dict(s['ansatz'])
+    #    sdict['ansatz'] = ansatz_truncate.split('_')[0]
+    #    sdict['truncate'] = int(ansatz_truncate.split('_')[1])
+    #    sdict['mL'] = data['mpl']
+    #    fitc = fit_class(sdict)
+    #    prior = fitc.get_priors(p,data['prior'])
     # chain fit models
     for ansatz_truncate in s['ansatz']['type']:
         sdict = dict(s['ansatz'])
@@ -277,10 +278,10 @@ def fit_data(s,p,data,phys):
         sdict['truncate'] = int(ansatz_truncate.split('_')[1])
         sdict['mL'] = data['mpl']
         fitc = fit_class(sdict)
+        prior = fitc.get_priors(p,data['prior'])
         fit = lsqfit.nonlinear_fit(data=(x,y),prior=prior,fcn=fitc.fit_function)
         phys_pt = eval_phys(phys,fitc,fit)
         result[ansatz_truncate] = {'fit':fit, 'phys':phys_pt, 'fitc': fitc}
-        prior = fit.p # chain the priors into the subsequent fits
     return result
 
 def eval_phys(phys,fitc,fit):
