@@ -280,6 +280,7 @@ def fit_data(s,p,data,phys):
         fit = lsqfit.nonlinear_fit(data=(x,y),prior=prior,fcn=fitc.fit_function)
         phys_pt = eval_phys(phys,fitc,fit)
         result[ansatz_truncate] = {'fit':fit, 'phys':phys_pt, 'fitc': fitc}
+        prior = fit.p # chain the priors into the subsequent fits
     return result
 
 def eval_phys(phys,fitc,fit):
@@ -889,10 +890,11 @@ class plot_chiral_fit():
             ax.errorbar(x=r_chiral[k]['rd']['x'][i].mean+dx,y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
         # plot FV uncorrected data
         for idx,ens in enumerate(data['ens']):
-            dx = s['x_shift'][ens] + 0.01
+            dx = s['x_shift'][ens]
             raw_epi = data['prior']['epi'][idx]
             raw_ga = data['y']['gar'][idx]
-            ax.errorbar(x=raw_epi.mean+dx,y=raw_ga.mean,yerr=raw_ga.sdev,ls='None',marker=self.plot_params[ens_abbr[ens]]['marker'],fillstyle='none',markersize='5',elinewidth=1,capsize=2,color='k',alpha=0.5)
+            #ax.errorbar(x=raw_epi.mean+dx,y=raw_ga.mean,yerr=raw_ga.sdev,ls='None',marker=self.plot_params[ens_abbr[ens]]['marker'],fillstyle='none',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[ens_abbr[ens]]['color'],alpha=0.4)
+            ax.errorbar(x=raw_epi.mean+dx,y=raw_ga.mean,ls='None',marker='_',fillstyle='full',markersize='5',elinewidth=1,capsize=2,color='k',alpha=1)
         # pdg
         gA_pdg = [1.2723, 0.0023]
         ax.errorbar(x=epi_phys.mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
