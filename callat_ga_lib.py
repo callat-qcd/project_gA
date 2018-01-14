@@ -33,6 +33,7 @@ def format_data(switches, gadf, hqdf):
     afs_list = []
     mpl_list = []
     ed_list  = []
+    ens_list = []
     for e in switches['ensembles']:
         ens = ens_abbr[e]
         gar = gadf.query("ensemble=='%s'" %ens).sort_values(by='nbs')['ga'].as_matrix()
@@ -49,8 +50,9 @@ def format_data(switches, gadf, hqdf):
         aw0_list.append(gv.gvar(awm,aws))
         ed_list.append(gv.gvar(ed,switches['eps_delta_sig']*ed))
         afs_list.append(afs)
+        ens_list.append(e)
     data = {'y':{'gar': gar_list}, 'prior':{'epi': epi_list, 'aw0': aw0_list,'ed':ed_list},
-            'x':{'afs': afs_list}, 'mpl': mpl_list}
+            'x':{'afs': afs_list}, 'mpl': mpl_list, 'ens': ens_list}
     return data
 
 class fit_class():
@@ -845,7 +847,7 @@ class plot_chiral_fit():
         if s['save_figs']:
             plt.savefig('%s/model_avg_histogram.pdf' %(self.loc),transparent=True)
         plt.draw()
-    def model_avg_chiral(self,s,phys,wd,r_chiral):
+    def model_avg_chiral(self,s,phys,wd,r_chiral,data=None):
         # model average
         y = 0
         ya = {0:0,1:0,2:0}
@@ -885,6 +887,12 @@ class plot_chiral_fit():
             e = ens_abbr[ens]
             dx = s['x_shift'][ens]
             ax.errorbar(x=r_chiral[k]['rd']['x'][i].mean+dx,y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
+        # plot FV uncorrected data
+        for idx,ens in enumerate(data['ens']):
+            dx = s['x_shift'][ens] + 0.01
+            raw_epi = data['prior']['epi'][idx]
+            raw_ga = data['y']['gar'][idx]
+            ax.errorbar(x=raw_epi.mean+dx,y=raw_ga.mean,yerr=raw_ga.sdev,ls='None',marker=self.plot_params[ens_abbr[ens]]['marker'],fillstyle='none',markersize='5',elinewidth=1,capsize=2,color='k',alpha=0.5)
         # pdg
         gA_pdg = [1.2723, 0.0023]
         ax.errorbar(x=epi_phys.mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize='8',capsize=2,color='black',label='$g_A^{PDG}=1.2723(23)$')
