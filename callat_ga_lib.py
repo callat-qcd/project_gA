@@ -263,15 +263,7 @@ def fit_data(s,p,data,phys):
     x = data['x']
     y = data['y']['gar']
     result = dict()
-    # get all priors
-    #for ansatz_truncate in s['ansatz']['type']:
-    #    sdict = dict(s['ansatz'])
-    #    sdict['ansatz'] = ansatz_truncate.split('_')[0]
-    #    sdict['truncate'] = int(ansatz_truncate.split('_')[1])
-    #    sdict['mL'] = data['mpl']
-    #    fitc = fit_class(sdict)
-    #    prior = fitc.get_priors(p,data['prior'])
-    # chain fit models
+    # fit models
     for ansatz_truncate in s['ansatz']['type']:
         sdict = dict(s['ansatz'])
         sdict['ansatz'] = ansatz_truncate.split('_')[0]

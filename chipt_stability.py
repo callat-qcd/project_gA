@@ -25,7 +25,6 @@ for l in f:
     else:
         y -= 1
         dat = l.split(',')
-        print dat
         ticks.append(y)
         if dat[0] == 'True':
             avg = True
@@ -34,7 +33,6 @@ for l in f:
         label = dat[1]
         avg_list.append(avg)
         label_list.append(label)
-        #print label
         mean = float(dat[2])
         sdev = float(dat[3])
         chi2dof = float(dat[4])
