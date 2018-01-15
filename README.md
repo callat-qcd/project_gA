@@ -57,7 +57,8 @@ numpy  version: 1.12.1
 scipy  version: 0.19.0
 mpl    version: 2.0.2
 lsqfit version: 9.1.3
-gvar   version: 8.3.2```
+gvar   version: 8.3.2
+```
 
 and
 
@@ -69,4 +70,5 @@ numpy  version: 1.13.1
 scipy  version: 0.19.0
 mpl    version: 2.0.2
 lsqfit version: 9.1.3
-gvar   version: 8.2.2```
+gvar   version: 8.2.2
+```
