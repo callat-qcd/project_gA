@@ -15,7 +15,7 @@ This project is for the analysis code and data files for our calculation of g<su
   * matplotlib routines
 
 # Setup for Python environment
-## Download Anaconda and install 
+## Download Anaconda and install
 Download [Anaconda](https://www.continuum.io/downloads) and follow installation instructions.
 
 ## Create Python environment with Anaconda
@@ -46,3 +46,29 @@ jupyter notebook ga_workbook.ipynb
     alt="CalLat logo"
     /img>
 </figure>
+
+
+## Tested with the following Python Setup
+```
+python version: 3.6.1 |Anaconda 4.4.0 (x86_64)| (default, May 11 2017, 13:04:09)
+[GCC 4.2.1 Compatible Apple LLVM 6.0 (clang-600.0.57)]
+pandas version: 0.20.1
+numpy  version: 1.12.1
+scipy  version: 0.19.0
+mpl    version: 2.0.2
+lsqfit version: 9.1.3
+gvar   version: 8.3.2
+```
+
+and
+
+```
+python version: 2.7.13 (default, Jul 29 2017, 11:08:07)
+[GCC 4.2.1 Compatible Apple LLVM 8.1.0 (clang-802.0.42)]
+pandas version: 0.20.3
+numpy  version: 1.13.1
+scipy  version: 0.19.0
+mpl    version: 2.0.2
+lsqfit version: 9.1.3
+gvar   version: 8.2.2
+```
