@@ -749,7 +749,11 @@ class plot_chiral_fit():
                 sdev = np.array([j.sdev for j in extrap])
                 mpiL_extrap_plot = np.exp(-mpiL_extrap)/np.sqrt(mpiL_extrap)
                 ax.fill_between(mpiL_extrap_plot,mean+sdev,mean-sdev,alpha=0.4,color='#70bf41')
-                ax.errorbar(x=mpiL_extrap_plot,y=mean,ls='--',marker='',elinewidth=1,color='#70bf41',label='NLO $\chi$PT prediction')
+                if s['ansatz']['FVn'] == 3:
+                    lbl = 'NNLO $\chi$PT estimate'
+                elif s['ansatz']['FVn'] == 2:
+                    lbl = 'NLO $\chi$PT prediction'
+                ax.errorbar(x=mpiL_extrap_plot,y=mean,ls='--',marker='',elinewidth=1,color='#70bf41',label=lbl)
                 return ax, {'mpiL_extrap_plot':mpiL_extrap_plot,'y':extrap}
             def v_data(ax,s,data,result):
                 x = data['mpl']
@@ -987,7 +991,11 @@ class plot_chiral_fit():
         mean = np.array([i.mean for i in y])
         sdev = np.array([i.sdev for i in y])
         ax.fill_between(l_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#70bf41')
-        ax.errorbar(x=l_extrap,y=mean,ls='--',marker='',elinewidth=1,color='#70bf41',label='NLO $\chi$PT prediction')
+        if s['ansatz']['FVn'] == 3:
+            lbl = 'NNLO $\chi$PT estimate'
+        elif s['ansatz']['FVn'] == 2:
+            lbl = 'NLO $\chi$PT prediction'
+        ax.errorbar(x=l_extrap,y=mean,ls='--',marker='',elinewidth=1,color='#70bf41',label=lbl)
         # data
         for i,e in enumerate(r_fv[k]['rd']['ens']):
             ax.errorbar(x=r_fv[k]['rd']['x'][i],y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize='5',elinewidth=1,capsize=2,color=self.plot_params[e]['color'])
