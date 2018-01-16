@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
@@ -117,5 +118,7 @@ ax0.yaxis.set_tick_params(labelsize=12,direction='in')
 ax1.yaxis.set_tick_params(labelleft=False,direction='in')
 ax2.yaxis.set_tick_params(labelleft=False,direction='in')
 plt.draw()
+if not os.path.exists('plots'):
+    os.makedirs('plots')
 plt.savefig('./plots/chipt_stability.pdf',transparent=True)
 plt.show()
