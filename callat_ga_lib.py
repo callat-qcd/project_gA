@@ -1,4 +1,4 @@
-import sys
+import os, sys
 import gvar as gv
 import scipy.special as spsp
 import scipy.stats as stats
@@ -6,6 +6,9 @@ import numpy as np
 import lsqfit
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
+
+if not os.path.exists('plots'):
+    os.makedirs('plots')
 
 ens_abbr = {
     'a15m400' :'l1648f211b580m0217m065m838',

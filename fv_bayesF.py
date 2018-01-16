@@ -1,6 +1,9 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
+if not os.path.exists('plots'):
+    os.makedirs('plots')
 
 f = open('./data/fv_fits.csv','r')
 header = np.array(f.readline().split(','))[1:]
@@ -22,7 +25,7 @@ lgbf_list = {k:np.array(lgbf_list[k]) for k in lgbf_list}
 x = np.array(x)
 bf = {k:np.exp(np.array(lgbf_list[k])-np.array(lgbf_max[k])) for k in lgbf_list}
 
-# plot 
+# plot
 title_y_pos = [['bottom',0.1],['bottom',0.1],['top',0.9],['top',0.9],['top',0.9],['top',0.9]]
 for idx,k in enumerate(lgbf_list):
     fig = plt.figure('%s finite volume Bayes Factors' %k,figsize=(7,4.326237))

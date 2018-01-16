@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
 
+if not os.path.exists('plots'):
+    os.makedirs('plots')
+
 f = open('./data/stability.csv','r')
 next(f)
 #fig = plt.figure('chiral extrapolation',figsize=(7,4.326237))
@@ -118,7 +121,5 @@ ax0.yaxis.set_tick_params(labelsize=12,direction='in')
 ax1.yaxis.set_tick_params(labelleft=False,direction='in')
 ax2.yaxis.set_tick_params(labelleft=False,direction='in')
 plt.draw()
-if not os.path.exists('plots'):
-    os.makedirs('plots')
 plt.savefig('./plots/chipt_stability.pdf',transparent=True)
 plt.show()
