@@ -6,6 +6,11 @@ import numpy as np
 import lsqfit
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
+if True:
+    plt.rcParams['text.latex.preamble'] = [
+        r'\usepackage{helvet}',
+        r'\usepackage{sansmath}',
+        r'\sansmath']
 
 if not os.path.exists('plots'):
     os.makedirs('plots')

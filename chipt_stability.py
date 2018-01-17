@@ -2,6 +2,11 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
+if True:
+    plt.rcParams['text.latex.preamble'] = [
+        r'\usepackage{helvet}',
+        r'\usepackage{sansmath}',
+        r'\sansmath']
 
 if not os.path.exists('plots'):
     os.makedirs('plots')
@@ -46,11 +51,11 @@ for l in f:
         lgbf_list.append(logGBF)
         if logGBF > lgbf_max and logGBF not in [10000]:
             lgbf_max = logGBF
-        lbl = label
+        lbl = r'%s' %label
         mrk = 'o'
         clr = 'k'
         alpha=0.5
-        if label in ['N3LO $\chi$PT','NLO $\chi$PT($\Delta$)']:
+        if label in ['N3LO $\chi$PT','NLO $\chi$PT($\mathrm{\Delta}$)']:
             alpha = 1
             clr = '#b36ae2'
         if avg:
