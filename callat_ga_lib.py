@@ -442,6 +442,7 @@ class plot_chiral_fit():
             init_order = fitc.n
             x = xp['x']
             priorx = xp['priorx']
+            #print('CONV FIT:',ansatz)
             if ansatz in ['taylor','linear']:
                 tn = int(fitc.n//2+1)
                 order = np.zeros(tn)
@@ -453,6 +454,8 @@ class plot_chiral_fit():
                 order = range(1,tn+1)
             ls_list = ['-','--','-.',':']
             label = ['LO','NLO','NNLO','NNLO+ct']
+            if ansatz == 'xpt-full':
+                label[-1] = 'N3LO'
             phys_converge = []
             for n in range(tn):
                 fitc.n = order[n]
@@ -534,6 +537,12 @@ class plot_chiral_fit():
                 datax.append(x[i])
                 datay.append(y[i])
                 elist.append(ens)
+                # plot FV uncorrected data
+                if s['plot']['raw_data']:
+                    raw_ga = data['y']['gar'][i]
+                    ax.errorbar(x=x[i].mean+dx,y=raw_ga.mean,ls='None',\
+                        marker='_',fillstyle='full',markersize='5',elinewidth=1,\
+                        capsize=2,color='k',alpha=1)
             return ax, {'x':np.array(x),'y':np.array(y),'ens':np.array(elist)}
         def c_pdg(ax,result):
             gA_pdg = [1.2723, 0.0023]
