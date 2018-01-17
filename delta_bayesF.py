@@ -1,6 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
+if True:
+    plt.rcParams['text.latex.preamble'] = [
+        r'\usepackage{helvet}',
+        r'\usepackage{sansmath}',
+        r'\sansmath']
 
 f = open('./data/delta_fits.csv','r')
 next(f)
