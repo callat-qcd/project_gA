@@ -916,17 +916,10 @@ class plot_chiral_fit():
         label = ['$g_A(\epsilon_\pi,a\simeq 0.15$~fm$)$','$g_A(\epsilon_\pi,a\simeq 0.12$~fm$)$','$g_A(\epsilon_\pi,a\simeq 0.09$~fm$)$']
         for idx,i in enumerate(r_chiral[k]['ra'].keys()):
             #print(i)
-            ax.errorbar(x=r_chiral[k]['r0']['epi'],y=[j.mean for j in ya[i]],ls='-',\
-                marker='',markeredgewidth=lw,color=color_list[idx],label=label[idx])
-            #ax.plot(x=r_chiral[k]['r0']['epi'],y=[j.mean for j in ya[i]],\
-            #    color=color_list[idx],label=label[idx])
-        # continuum extrap
-        epi_extrap = r_chiral[k]['r0']['epi']
-        mean = np.array([i.mean for i in y])
-        sdev = np.array([i.sdev for i in y])
-        ax.fill_between(epi_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi,a=0)$')
-        ax.errorbar(x=epi_extrap,y=mean,ls='--',marker='',markeredgewidth=lw,\
-            color='#b36ae2')
+            #ax.errorbar(x=r_chiral[k]['r0']['epi'],y=[j.mean for j in ya[i]],ls='-',\
+            #    marker='',markeredgewidth=lw,color=color_list[idx],label=label[idx])
+            ax.plot(r_chiral[k]['r0']['epi'],[j.mean for j in ya[i]],\
+                linewidth=lw,color=color_list[idx],label=label[idx])
         # data
         for i,ens in enumerate(r_chiral[k]['rd']['ens']):
             e = ens_abbr[ens]
@@ -948,8 +941,17 @@ class plot_chiral_fit():
         ax.errorbar(x=epi_phys.mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',\
             fillstyle='none',markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
             color='black',label='$g_A^{PDG}=1.2723(23)$')
+        # continuum extrap
+        epi_extrap = r_chiral[k]['r0']['epi']
+        mean = np.array([i.mean for i in y])
+        sdev = np.array([i.sdev for i in y])
+        ax.fill_between(epi_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi,a=0)$')
+        #ax.errorbar(x=epi_extrap,y=mean,ls='--',marker='',markeredgewidth=lw,\
+        #    color='#b36ae2')
+        ax.plot(epi_extrap,mean,ls='--',linewidth=lw,color='#b36ae2')
         # legend
         handles, labels = ax.get_legend_handles_labels()
+        print(labels)
         l0 = [handles[0],handles[-1]]
         l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
         leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=fs_l,\
