@@ -569,7 +569,7 @@ class plot_chiral_fit():
                 ax.errorbar(x=x[i].mean+dx,xerr=x[i].sdev,y=y[i].mean,\
                     yerr=y[i].sdev,ls='None',\
                     marker=self.plot_params[e]['marker'],fillstyle='full',\
-                    markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+                    markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
                     color=self.plot_params[e]['color'],\
                     label=self.plot_params[e]['label'])
                 datax.append(x[i])
@@ -586,7 +586,7 @@ class plot_chiral_fit():
             gA_pdg = [1.2723, 0.0023]
             ax.errorbar(x=result['phys']['epi'].mean,y=gA_pdg[0],yerr=gA_pdg[1],\
                 ls='None',marker='o',fillstyle='none',color='black',\
-                markersize=ms,capsize=cs,elinewidth=lw,markeredgewidth=lw,\
+                markersize=ms,capsize=cs,elinewidth=lw,mew=lw,\
                 label='$g_A^{PDG}=1.2723(23)$')
             return ax
         def c_legend(ax):
@@ -701,9 +701,13 @@ class plot_chiral_fit():
                 extrap = fitc.fit_function(x,priorx)
                 aw0_extrap_plot = aw0_extrap**2/(4*np.pi)
                 if i == 4:
-                    ax.errorbar(x=aw0_extrap_plot,y=[j.mean for j in extrap],ls=ls_list[i],dashes=dashes,marker='',elinewidth=lw,color=color[i],label=label[i])
+                    ax.plot(aw0_extrap_plot,[j.mean for j in extrap],\
+                        ls=ls_list[i],dashes=dashes,marker='',lw=lw,\
+                        color=color[i],label=label[i])
                 else:
-                    ax.errorbar(x=aw0_extrap_plot,y=[j.mean for j in extrap],ls=ls_list[i],marker='',elinewidth=lw,color=color[i],label=label[i])
+                    ax.plot(aw0_extrap_plot,[j.mean for j in extrap],\
+                        ls=ls_list[i],marker='',lw=lw,\
+                        color=color[i],label=label[i])
                 rm[i] = extrap
             return ax, rm
         def a_cont(ax,result):
@@ -726,7 +730,7 @@ class plot_chiral_fit():
             sdev = np.array([j.sdev for j in extrap])
             aw0_extrap_plot = aw0_extrap**2/(4*np.pi)
             ax.fill_between(aw0_extrap_plot,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi^{phys.},\epsilon_a)$')
-            ax.errorbar(x=aw0_extrap_plot,y=mean,ls='-',marker='',elinewidth=lw,color='#b36ae2')
+            ax.plot(aw0_extrap_plot,mean,ls='-',marker='',lw=lw,color='#b36ae2')
             return ax, {'x':x, 'priorx':priorx}, {'aw0_extrap_plot':aw0_extrap_plot,'y':extrap}
         def a_data(ax,s,result):
             x = result['fit'].prior['aw0']
@@ -740,22 +744,38 @@ class plot_chiral_fit():
             for i,ens in enumerate(s['ensembles']):
                 e = ens_abbr[ens]
                 xplot = x[i]**2/(4.*np.pi)
-                ax.errorbar(x=xplot.mean,xerr=xplot.sdev,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize=ms,elinewidth=lw,capsize=cs,color=self.plot_params[e]['color'])
+                ax.errorbar(x=xplot.mean,xerr=xplot.sdev,y=y[i].mean,yerr=y[i].sdev,\
+                    marker=self.plot_params[e]['marker'],ls='None',fillstyle='full',\
+                    markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
+                    color=self.plot_params[e]['color'])
                 xlist.append(xplot)
                 ylist.append(y[i])
                 elist.append(e)
             return ax, {'x':np.array(xlist),'y':np.array(ylist),'ens':np.array(elist)}
         def a_pdg(ax,result):
             gA_pdg = [1.2723, 0.0023]
-            ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize=ms,capsize=cs,color='black',label='$g_A^{PDG}=1.2723(23)$')
+            ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',\
+                fillstyle='none',markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
+                color='black',label='$g_A^{PDG}=1.2723(23)$')
             return ax
         def a_legend(ax):
             handles, labels = ax.get_legend_handles_labels()
-            l0 = [handles[0],handles[-1]]
-            l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
-            leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=fs_l,edgecolor='k',fancybox=False)
-            ax.legend(handles=l1,numpoints=1,loc=3,ncol=2,fontsize=fs_l,edgecolor='k',fancybox=False)
+            l0_list = ['$g_A^{LQCD}(\epsilon_\pi^{phys.},\epsilon_a)$',\
+                '$g_A^{PDG}=1.2723(23)$']
+            l0 = []
+            l1 = []
+            for hi,h in enumerate(handles):
+                if labels[hi] in l0_list:
+                    l0.append(h)
+                else:
+                    l1.append(h)
+            leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,\
+                fontsize=fs_l,edgecolor='k',fancybox=False)
+            leg_data = ax.legend(handles=l1,numpoints=1,loc=3,ncol=2,\
+                fontsize=fs_l,edgecolor='k',fancybox=False)
             plt.gca().add_artist(leg)
+            leg.get_frame().set_linewidth(lw)
+            leg_data.get_frame().set_linewidth(lw)
             return None
         r_cont = dict()
         for ansatz_truncate in s['ansatz']['type']:
@@ -784,6 +804,7 @@ class plot_chiral_fit():
             ax.xaxis.set_tick_params(labelsize=ts,width=lw)
             ax.yaxis.set_tick_params(labelsize=ts,width=lw)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+            [i.set_linewidth(lw) for i in ax.spines.itervalues()]
             if s['save_figs']:
                 plt.savefig('%s/continuum_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
@@ -950,7 +971,7 @@ class plot_chiral_fit():
         for idx,i in enumerate(r_chiral[k]['ra'].keys()):
             #print(i)
             #ax.errorbar(x=r_chiral[k]['r0']['epi'],y=[j.mean for j in ya[i]],ls='-',\
-            #    marker='',markeredgewidth=lw,color=color_list[idx],label=label[idx])
+            #    marker='',mew=lw,color=color_list[idx],label=label[idx])
             ax.plot(r_chiral[k]['r0']['epi'],[j.mean for j in ya[i]],\
                 linewidth=lw,color=color_list[idx],label=label[idx])
         # data
@@ -959,7 +980,7 @@ class plot_chiral_fit():
             dx = s['x_shift'][ens]
             ax.errorbar(x=r_chiral[k]['rd']['x'][i].mean+dx,y=d[i].mean,yerr=d[i].sdev,\
                 ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',\
-                markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+                markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
                 color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
         # plot FV uncorrected data
         if s['plot']['raw_data']:
@@ -972,14 +993,14 @@ class plot_chiral_fit():
         # pdg
         gA_pdg = [1.2723, 0.0023]
         ax.errorbar(x=epi_phys.mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',\
-            fillstyle='none',markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+            fillstyle='none',markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
             color='black',label='$g_A^{PDG}=1.2723(23)$')
         # continuum extrap
         epi_extrap = r_chiral[k]['r0']['epi']
         mean = np.array([i.mean for i in y])
         sdev = np.array([i.sdev for i in y])
         ax.fill_between(epi_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi,a=0)$')
-        #ax.errorbar(x=epi_extrap,y=mean,ls='--',marker='',markeredgewidth=lw,\
+        #ax.errorbar(x=epi_extrap,y=mean,ls='--',marker='',mew=lw,\
         #    color='#b36ae2')
         ax.plot(epi_extrap,mean,ls='--',linewidth=lw,color='#b36ae2')
         # legend
@@ -1052,13 +1073,13 @@ class plot_chiral_fit():
         for i,e in enumerate(r_cont[k]['rd']['ens']):
             ax.errorbar(x=r_cont[k]['rd']['x'][i].mean,y=d[i].mean,yerr=d[i].sdev,\
                 ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',\
-                markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+                markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
                 color=self.plot_params[e]['color'])
         # pdg
         gA_pdg = [1.2723, 0.0023]
         #ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize=ms,capsize=cs,color='black',label='$g_A^{PDG}=1.2723(23)$')
         ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',\
-            fillstyle='none',markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+            fillstyle='none',markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
             color='black',label='$g_A^{PDG}=1.2723(23)$')
         # legend
         #handles, labels = ax.get_legend_handles_labels()
@@ -1125,7 +1146,7 @@ class plot_chiral_fit():
         for i,e in enumerate(r_fv[k]['rd']['ens']):
             ax.errorbar(x=r_fv[k]['rd']['x'][i],y=d[i].mean,yerr=d[i].sdev,\
                 ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',\
-                markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+                markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
                 color=self.plot_params[e]['color'])
         # legend
         handles, labels = ax.get_legend_handles_labels()
