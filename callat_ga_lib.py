@@ -950,10 +950,16 @@ class plot_chiral_fit():
         #    color='#b36ae2')
         ax.plot(epi_extrap,mean,ls='--',linewidth=lw,color='#b36ae2')
         # legend
+        l0 = []
+        l1 = []
         handles, labels = ax.get_legend_handles_labels()
-        print(labels)
-        l0 = [handles[0],handles[-1]]
-        l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
+        for hi,h in enumerate(handles):
+            if labels[hi] in ['$g_A^{LQCD}(\epsilon_\pi,a=0)$','$g_A^{PDG}=1.2723(23)$']:
+                l0.append(h)
+            else:
+                l1.append(h)
+        #l0 = [handles[0],handles[-1]]
+        #l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
         leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=fs_l,\
             edgecolor='k',fancybox=False)
         leg_data = ax.legend(handles=l1,numpoints=1,loc=4,ncol=2,fontsize=fs_l,\
