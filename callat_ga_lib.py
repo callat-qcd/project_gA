@@ -35,7 +35,7 @@ else:
     fig_size2 = (fs2_base,fs2_base/gr)
     fs3_base = 7 #4.66666667
     fig_size3 = (fs3_base,fs3_base/gr)
-plt_axes = [0.15,0.165,0.825,0.825]
+plt_axes = [0.14,0.165,0.825,0.825]
 
 
 if not os.path.exists('plots'):
@@ -613,8 +613,8 @@ class plot_chiral_fit():
             ax.set_xlim([0,0.32])
             ax.set_xlabel('$\epsilon_\pi=m_\pi/(4\pi F_\pi)$', fontsize=fs_xy)
             ax.set_ylabel('$g_A$', fontsize=fs_xy)
-            ax.xaxis.set_tick_params(labelsize=ts)
-            ax.yaxis.set_tick_params(labelsize=ts)
+            ax.xaxis.set_tick_params(labelsize=ts,width=lw)
+            ax.yaxis.set_tick_params(labelsize=ts,width=lw)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             self.ax = ax
             if s['save_figs']:
@@ -637,8 +637,8 @@ class plot_chiral_fit():
             ax.set_xlim([0,0.32])
             ax.set_xlabel('$\epsilon_\pi=m_\pi/(4\pi F_\pi)$', fontsize=fs_xy)
             ax.set_ylabel('$g_A$', fontsize=fs_xy)
-            ax.xaxis.set_tick_params(labelsize=ts)
-            ax.yaxis.set_tick_params(labelsize=ts)
+            ax.xaxis.set_tick_params(labelsize=ts,width=lw)
+            ax.yaxis.set_tick_params(labelsize=ts,width=lw)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             if s['save_figs']:
                 plt.savefig('%s/convergence_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
@@ -753,8 +753,8 @@ class plot_chiral_fit():
             ax.set_xlim([-0.001,0.81/(4*np.pi)])
             ax.set_xlabel('$\epsilon_a^2=a^2/(4\pi w^2_0)$', fontsize=fs_xy)
             ax.set_ylabel('$g_A$', fontsize=fs_xy)
-            ax.xaxis.set_tick_params(labelsize=ts)
-            ax.yaxis.set_tick_params(labelsize=ts)
+            ax.xaxis.set_tick_params(labelsize=ts,width=lw)
+            ax.yaxis.set_tick_params(labelsize=ts,width=lw)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
             if s['save_figs']:
                 plt.savefig('%s/continuum_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
@@ -832,8 +832,8 @@ class plot_chiral_fit():
                 ax.set_xlabel('$e^{-m_\pi L}/(m_\pi L)^{1/2}$', fontsize=fs_xy)
                 ax.set_ylabel('$g_A$', fontsize=fs_xy)
                 ax.yaxis.set_ticks([1.23,1.25,1.27,1.29])
-                ax.xaxis.set_tick_params(labelsize=ts)
-                ax.yaxis.set_tick_params(labelsize=ts)
+                ax.xaxis.set_tick_params(labelsize=ts,width=lw)
+                ax.yaxis.set_tick_params(labelsize=ts,width=lw)
                 ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
                 if s['save_figs']:
                     plt.savefig('%s/volume_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
@@ -884,7 +884,7 @@ class plot_chiral_fit():
         ax.set_xlabel('$g_A$', fontsize=fs_xy)
         frame = plt.gca()
         frame.axes.get_yaxis().set_visible(False)
-        ax.xaxis.set_tick_params(labelsize=ts)
+        ax.xaxis.set_tick_params(labelsize=ts,width=lw)
         if s['save_figs']:
             plt.savefig('%s/model_avg_histogram.pdf' %(self.loc),transparent=True)
         plt.draw()
@@ -970,8 +970,8 @@ class plot_chiral_fit():
         ax.set_xlim([0,0.32])
         ax.set_xlabel('$\epsilon_\pi=m_\pi/(4\pi F_\pi)$', fontsize=fs_xy)
         ax.set_ylabel('$g_A$', fontsize=fs_xy)
-        ax.xaxis.set_tick_params(labelsize=ts)
-        ax.yaxis.set_tick_params(labelsize=ts)
+        ax.xaxis.set_tick_params(labelsize=ts,width=lw)
+        ax.yaxis.set_tick_params(labelsize=ts,width=lw)
         ax.set_title('model average',fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
         [i.set_linewidth(lw) for i in ax.spines.itervalues()]
         leg.get_frame().set_linewidth(lw)
@@ -1048,8 +1048,8 @@ class plot_chiral_fit():
         ax.set_xlim([-0.001,0.81/(4*np.pi)])
         ax.set_xlabel('$\epsilon_a^2=a^2/(4\pi w^2_0)$', fontsize=fs_xy)
         ax.set_ylabel('$g_A$', fontsize=fs_xy)
-        ax.xaxis.set_tick_params(labelsize=ts)
-        ax.yaxis.set_tick_params(labelsize=ts)
+        ax.xaxis.set_tick_params(labelsize=ts,width=lw)
+        ax.yaxis.set_tick_params(labelsize=ts,width=lw)
         ax.set_title('model average',fontdict={'fontsize':fs_xy,\
             'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
         [i.set_linewidth(lw) for i in ax.spines.itervalues()]
@@ -1084,10 +1084,13 @@ class plot_chiral_fit():
             lbl = 'NNLO $\chi$PT estimate'
         elif s['ansatz']['FVn'] == 2:
             lbl = 'NLO $\chi$PT prediction'
-        ax.errorbar(x=l_extrap,y=mean,ls='--',marker='',elinewidth=lw,color='#70bf41',label=lbl)
+        ax.plot(l_extrap,mean,ls='--',marker='',linewidth=lw,color='#70bf41',label=lbl)
         # data
         for i,e in enumerate(r_fv[k]['rd']['ens']):
-            ax.errorbar(x=r_fv[k]['rd']['x'][i],y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize=ms,elinewidth=lw,capsize=cs,color=self.plot_params[e]['color'])
+            ax.errorbar(x=r_fv[k]['rd']['x'][i],y=d[i].mean,yerr=d[i].sdev,\
+                ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',\
+                markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+                color=self.plot_params[e]['color'])
         # legend
         handles, labels = ax.get_legend_handles_labels()
         leg = ax.legend(handles=handles,loc=4,ncol=1, fontsize=fs_l,edgecolor='k',fancybox=False)
@@ -1098,9 +1101,12 @@ class plot_chiral_fit():
         ax.set_xlabel('$e^{-m_\pi L}/(m_\pi L)^{1/2}$', fontsize=fs_xy)
         ax.set_ylabel('$g_A$', fontsize=fs_xy)
         ax.yaxis.set_ticks([1.23,1.25,1.27,1.29])
-        ax.xaxis.set_tick_params(labelsize=ts)
-        ax.yaxis.set_tick_params(labelsize=ts)
+        ax.xaxis.set_tick_params(labelsize=ts,width=lw)
+        ax.yaxis.set_tick_params(labelsize=ts,width=lw)
         ax.set_title('model average',fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+        [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+        leg.get_frame().set_linewidth(lw)
+
         if s['save_figs']:
             plt.savefig('%s/fv_modelavg.pdf' %(self.loc),transparent=True)
         plt.draw()
