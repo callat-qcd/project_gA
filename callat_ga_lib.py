@@ -7,7 +7,7 @@ import lsqfit
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=True)
 
-nature_figs=True
+nature_figs=False
 if nature_figs:
     plt.rcParams['text.latex.preamble'] = [
         r'\usepackage{helvet}',
@@ -30,6 +30,7 @@ else:
     fs_l = 12
     fs_xy = 20
     ts = 16
+    lw = 1
     gr = 1.618034333
     fs2_base = 7
     fig_size2 = (fs2_base,fs2_base/gr)
