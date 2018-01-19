@@ -875,16 +875,21 @@ class plot_chiral_fit():
         ax.errorbar(x=[x[uidx95],x[uidx95]],y=[0,ysum[uidx95]],color='black',lw=lw)
         ax.errorbar(x=[x[lidx68],x[lidx68]],y=[0,ysum[lidx68]],color='black',lw=lw)
         ax.errorbar(x=[x[uidx68],x[uidx68]],y=[0,ysum[uidx68]],color='black',lw=lw)
-        ax.errorbar(x=x,y=ysum,ls='-',color='black')
+        ax.errorbar(x=x,y=ysum,ls='-',color='black',lw=lw)
         for a in ydict.keys():
-            ax.errorbar(x=x,y=ydict[a],ls=p[a]['ls'],color=p[a]['color'],label=p[a]['tag'],lw=lw)
-        ax.legend(fontsize=fs_l,edgecolor='k',fancybox=False)
+            ax.plot(x,ydict[a],ls=p[a]['ls'],color=p[a]['color'],lw=lw,\
+                label=p[a]['tag'])
+        leg = ax.legend(fontsize=fs_l,edgecolor='k',fancybox=False)
         ax.set_ylim(bottom=0)
         ax.set_xlim([1.225,1.335])
         ax.set_xlabel('$g_A$', fontsize=fs_xy)
         frame = plt.gca()
         frame.axes.get_yaxis().set_visible(False)
         ax.xaxis.set_tick_params(labelsize=ts,width=lw)
+        # legend line width
+        [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+        leg.get_frame().set_linewidth(lw)
+
         if s['save_figs']:
             plt.savefig('%s/model_avg_histogram.pdf' %(self.loc),transparent=True)
         plt.draw()
