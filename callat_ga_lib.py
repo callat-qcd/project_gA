@@ -837,7 +837,8 @@ class plot_chiral_fit():
                     lbl = 'NNLO $\chi$PT estimate'
                 elif s['ansatz']['FVn'] == 2:
                     lbl = 'NLO $\chi$PT prediction'
-                ax.errorbar(x=mpiL_extrap_plot,y=mean,ls='--',marker='',elinewidth=lw,color='#70bf41',label=lbl)
+                ax.plot(mpiL_extrap_plot,mean,ls='--',marker='',lw=lw,\
+                    color='#70bf41',label=lbl)
                 return ax, {'mpiL_extrap_plot':mpiL_extrap_plot,'y':extrap}
             def v_data(ax,s,data,result):
                 x = data['mpl']
@@ -849,7 +850,11 @@ class plot_chiral_fit():
                     e = ens_abbr[ens]
                     if ens in ['a12m220S','a12m220','a12m220L']:
                         xplot = np.exp(-x[i])/np.sqrt(x[i])
-                        ax.errorbar(x=xplot,y=y[i].mean,yerr=y[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize=ms,elinewidth=lw,capsize=cs,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
+                        ax.errorbar(x=xplot,y=y[i].mean,yerr=y[i].sdev,ls='None',\
+                            marker=self.plot_params[e]['marker'],fillstyle='full',\
+                            markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
+                            color=self.plot_params[e]['color'],\
+                            label=self.plot_params[e]['label'])
                         xlist.append(xplot)
                         ylist.append(y[i])
                         elist.append(e)
@@ -859,6 +864,7 @@ class plot_chiral_fit():
                 handles, labels = ax.get_legend_handles_labels()
                 leg = ax.legend(handles=handles,loc=4,ncol=1, fontsize=fs_l,edgecolor='k',fancybox=False)
                 plt.gca().add_artist(leg)
+                leg.get_frame().set_linewidth(lw)
                 return None
             r_fv = dict()
             for ansatz_truncate in s['ansatz']['type']:
@@ -884,6 +890,7 @@ class plot_chiral_fit():
                 ax.xaxis.set_tick_params(labelsize=ts,width=lw)
                 ax.yaxis.set_tick_params(labelsize=ts,width=lw)
                 ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+                [i.set_linewidth(lw) for i in ax.spines.itervalues()]
                 if s['save_figs']:
                     plt.savefig('%s/volume_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
                 plt.draw()
