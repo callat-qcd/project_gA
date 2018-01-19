@@ -35,7 +35,7 @@ else:
     fig_size2 = (fs2_base,fs2_base/gr)
     fs3_base = 7 #4.66666667
     fig_size3 = (fs3_base,fs3_base/gr)
-plt_axes = [0.16,0.16,0.8,0.8]
+plt_axes = [0.15,0.165,0.825,0.825]
 
 
 if not os.path.exists('plots'):
@@ -976,10 +976,9 @@ class plot_chiral_fit():
         [i.set_linewidth(lw) for i in ax.spines.itervalues()]
         leg.get_frame().set_linewidth(lw)
         leg_data.get_frame().set_linewidth(lw)
-        lleg = plt.gca().get_legend()
-        llines = lleg.get_lines()
-        plt.setp(llines, linewidth=lw)
-        #[i.set_linewidth(lw) for i in ax.legend.legendHandles]
+        #lleg = plt.gca().get_legend()
+        #llines = lleg.get_lines()
+        #plt.setp(llines, linewidth=lw)
         if s['save_figs']:
             plt.savefig('%s/chiral_modelavg.pdf' %(self.loc),transparent=True)
         plt.draw()
@@ -1001,7 +1000,7 @@ class plot_chiral_fit():
         mean = np.array([i.mean for i in y])
         sdev = np.array([i.sdev for i in y])
         ax.fill_between(a_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi^{phys.},\epsilon_a)$')
-        ax.errorbar(x=a_extrap,y=mean,ls='--',marker='',elinewidth=lw,color='#b36ae2')
+        ax.plot(a_extrap,mean,ls='--',marker='',linewidth=lw,color='#b36ae2')
         # unphysical pion masses
         ls_list = ['-','--','-.',':','-']
         label = ['$g_A(\epsilon^{(130)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(220)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(310)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(350)}_\pi,\epsilon_a)$','$g_A(\epsilon^{(400)}_\pi,\epsilon_a)$']
@@ -1009,21 +1008,40 @@ class plot_chiral_fit():
         dashes = [8, 4, 2, 4, 2, 4]
         for idx,i in enumerate(r_cont[k]['rm'].keys()):
             if i == 4:
-                ax.errorbar(x=a_extrap,y=[j.mean for j in ym[i]],ls=ls_list[idx],dashes=dashes,marker='',elinewidth=lw,color=color[idx],label=label[idx])
+                ax.plot(a_extrap,[j.mean for j in ym[i]],ls=ls_list[idx],\
+                    dashes=dashes,marker='',linewidth=lw,color=color[idx],\
+                    label=label[idx])
             else:
-                ax.errorbar(x=a_extrap,y=[j.mean for j in ym[i]],ls=ls_list[idx],marker='',elinewidth=lw,color=color[idx],label=label[idx])
+                ax.plot(a_extrap,[j.mean for j in ym[i]],ls=ls_list[idx],\
+                    marker='',linewidth=lw,color=color[idx],label=label[idx])
         # data
         for i,e in enumerate(r_cont[k]['rd']['ens']):
-            ax.errorbar(x=r_cont[k]['rd']['x'][i].mean,y=d[i].mean,yerr=d[i].sdev,ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize=ms,elinewidth=lw,capsize=cs,color=self.plot_params[e]['color'])
+            ax.errorbar(x=r_cont[k]['rd']['x'][i].mean,y=d[i].mean,yerr=d[i].sdev,\
+                ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',\
+                markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+                color=self.plot_params[e]['color'])
         # pdg
         gA_pdg = [1.2723, 0.0023]
-        ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize=ms,capsize=cs,color='black',label='$g_A^{PDG}=1.2723(23)$')
+        #ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize=ms,capsize=cs,color='black',label='$g_A^{PDG}=1.2723(23)$')
+        ax.errorbar(x=0,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',\
+            fillstyle='none',markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+            color='black',label='$g_A^{PDG}=1.2723(23)$')
         # legend
+        #handles, labels = ax.get_legend_handles_labels()
+        #l0 = [handles[0],handles[-1]]
+        #l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
+        l0 = []
+        l1 = []
         handles, labels = ax.get_legend_handles_labels()
-        l0 = [handles[0],handles[-1]]
-        l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
-        leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=fs_l,edgecolor='k',fancybox=False)
-        ax.legend(handles=l1,numpoints=1,loc=3,ncol=2,fontsize=fs_l,edgecolor='k',fancybox=False)
+        for hi,h in enumerate(handles):
+            if labels[hi] in ['$g_A^{LQCD}(\epsilon_\pi^{phys.},\epsilon_a)$','$g_A^{PDG}=1.2723(23)$']:
+                l0.append(h)
+            else:
+                l1.append(h)
+        leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=fs_l,\
+            edgecolor='k',fancybox=False)
+        leg_data = ax.legend(handles=l1,numpoints=1,loc=3,ncol=2,fontsize=fs_l,\
+            edgecolor='k',fancybox=False)
         plt.gca().add_artist(leg)
         # settings
         ax.set_ylim([1.075,1.375])
@@ -1032,7 +1050,17 @@ class plot_chiral_fit():
         ax.set_ylabel('$g_A$', fontsize=fs_xy)
         ax.xaxis.set_tick_params(labelsize=ts)
         ax.yaxis.set_tick_params(labelsize=ts)
-        ax.set_title('model average',fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+        ax.set_title('model average',fontdict={'fontsize':fs_xy,\
+            'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+        [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+        leg.get_frame().set_linewidth(lw)
+        leg_data.get_frame().set_linewidth(lw)
+        #plt.setp(plt.gca().get_legend().get_lines(),linewidth=lw)
+        #plt.gca().get_legend().get_frame().set_linewidth(lw)
+        #lleg = plt.gca().get_legend()
+        #llines = lleg.get_lines()
+        #plt.setp(llines, linewidth=lw)
+
         if s['save_figs']:
             plt.savefig('%s/cont_modelavg.pdf' %(self.loc),transparent=True)
         plt.draw()
