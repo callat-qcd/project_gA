@@ -499,8 +499,10 @@ class plot_chiral_fit():
                     extrap = [extrap for i in range(len(priorx['epi']))]
                 mean = np.array([i.mean for i in extrap])
                 sdev = np.array([i.sdev for i in extrap])
-                ax.fill_between(priorx['epi'],mean+sdev,mean-sdev,alpha=0.4,label=label[n])
+                ax.fill_between(priorx['epi'],mean+sdev,mean-sdev,\
+                    alpha=0.4,label=label[n])
             fitc.n = init_order
+
             return ax, phys_converge
         # chiral extrapolation
         def c_chiral(ax,result):
@@ -525,7 +527,8 @@ class plot_chiral_fit():
                     else:
                         priorx[k] = fit.p[k]
                 extrap = fitc.fit_function(x,priorx)
-                ax.errorbar(x=epi_extrap,y=[j.mean for j in extrap],ls='-',marker='',elinewidth=lw,color=color_list[i],label=label[i])
+                ax.plot(epi_extrap,[j.mean for j in extrap],ls='-',marker='',\
+                    lw=lw,color=color_list[i],label=label[i])
                 ra[i] = extrap
             return ax, ra
         def c_continuum(ax,result):
@@ -549,7 +552,7 @@ class plot_chiral_fit():
             ax.axvspan(epi_phys.mean-epi_phys.sdev, epi_phys.mean+epi_phys.sdev, alpha=0.4, color='#a6aaa9')
             ax.axvline(epi_phys.mean,ls='--',color='#a6aaa9')
             ax.fill_between(epi_extrap,mean+sdev,mean-sdev,alpha=0.4,color='#b36ae2',label='$g_A^{LQCD}(\epsilon_\pi,a=0)$')
-            ax.errorbar(x=epi_extrap,y=mean,ls='--',marker='',elinewidth=lw,color='#b36ae2')
+            ax.plot(epi_extrap,mean,ls='--',marker='',lw=lw,color='#b36ae2')
             return ax, {'x':x, 'priorx':priorx}, {'epi':epi_extrap,'y':extrap}
         def c_data(ax,s,result,local_FV_switch=False):
             x = result['fit'].prior['epi']
@@ -563,8 +566,12 @@ class plot_chiral_fit():
             for i,ens in enumerate(s['ensembles']):
                 e = ens_abbr[ens]
                 dx = s['x_shift'][ens]
-                ax.errorbar(x=x[i].mean+dx,xerr=x[i].sdev,y=y[i].mean,yerr=y[i].sdev,\
-                    ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',markersize=ms,elinewidth=lw,capsize=cs,color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
+                ax.errorbar(x=x[i].mean+dx,xerr=x[i].sdev,y=y[i].mean,\
+                    yerr=y[i].sdev,ls='None',\
+                    marker=self.plot_params[e]['marker'],fillstyle='full',\
+                    markersize=ms,elinewidth=lw,capsize=cs,markeredgewidth=lw,\
+                    color=self.plot_params[e]['color'],\
+                    label=self.plot_params[e]['label'])
                 datax.append(x[i])
                 datay.append(y[i])
                 elist.append(ens)
@@ -577,15 +584,32 @@ class plot_chiral_fit():
             return ax, {'x':np.array(x),'y':np.array(y),'ens':np.array(elist)}
         def c_pdg(ax,result):
             gA_pdg = [1.2723, 0.0023]
-            ax.errorbar(x=result['phys']['epi'].mean,y=gA_pdg[0],yerr=gA_pdg[1],ls='None',marker='o',fillstyle='none',markersize=ms,capsize=cs,color='black',label='$g_A^{PDG}=1.2723(23)$')
+            ax.errorbar(x=result['phys']['epi'].mean,y=gA_pdg[0],yerr=gA_pdg[1],\
+                ls='None',marker='o',fillstyle='none',color='black',\
+                markersize=ms,capsize=cs,elinewidth=lw,markeredgewidth=lw,\
+                label='$g_A^{PDG}=1.2723(23)$')
             return ax
         def c_legend(ax):
             handles, labels = ax.get_legend_handles_labels()
-            l0 = [handles[0],handles[-1]]
-            l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
-            leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,fontsize=fs_l,edgecolor='k',fancybox=False)
-            ax.legend(handles=l1,numpoints=1,loc=4,ncol=2,fontsize=fs_l,edgecolor='k',fancybox=False)
+            l0_list = ['$g_A^{LQCD}(\epsilon_\pi,a=0)$','$g_A^{PDG}=1.2723(23)$']
+            l0 = []
+            l1 = []
+            for hi,h in enumerate(handles):
+                if labels[hi] in l0_list:
+                    l0.append(h)
+                else:
+                    l1.append(h)
+            #l0 = [handles[0],handles[-1]]
+            #l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
+            leg = ax.legend(handles=l0,numpoints=1,loc=1,ncol=1,\
+                fontsize=fs_l,edgecolor='k',fancybox=False)
+            leg_data = ax.legend(handles=l1,numpoints=1,loc=4,ncol=2,\
+                fontsize=fs_l,edgecolor='k',fancybox=False)
             plt.gca().add_artist(leg)
+            [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+            leg.get_frame().set_linewidth(lw)
+            leg_data.get_frame().set_linewidth(lw)
+
             return None
         ### Chiral extrapolation
         r_chiral = dict()
@@ -631,7 +655,8 @@ class plot_chiral_fit():
             ax.axvline(epi_phys.mean,ls='--',color='#a6aaa9')
             # make legend
             handles, labels = ax.get_legend_handles_labels()
-            ax.legend(handles=handles,loc=3,ncol=2,fontsize=fs_l,edgecolor='k',fancybox=False)
+            leg = ax.legend(handles=handles,loc=3,ncol=2,fontsize=fs_l,\
+                edgecolor='k',fancybox=False)
             # format plot
             ax.set_ylim([1.075,1.375])
             ax.set_xlim([0,0.32])
@@ -640,6 +665,9 @@ class plot_chiral_fit():
             ax.xaxis.set_tick_params(labelsize=ts,width=lw)
             ax.yaxis.set_tick_params(labelsize=ts,width=lw)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+            [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+            leg.get_frame().set_linewidth(lw)
+
             if s['save_figs']:
                 plt.savefig('%s/convergence_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
@@ -955,11 +983,12 @@ class plot_chiral_fit():
         #    color='#b36ae2')
         ax.plot(epi_extrap,mean,ls='--',linewidth=lw,color='#b36ae2')
         # legend
+        l0_list = ['$g_A^{LQCD}(\epsilon_\pi,a=0)$','$g_A^{PDG}=1.2723(23)$']
         l0 = []
         l1 = []
         handles, labels = ax.get_legend_handles_labels()
         for hi,h in enumerate(handles):
-            if labels[hi] in ['$g_A^{LQCD}(\epsilon_\pi,a=0)$','$g_A^{PDG}=1.2723(23)$']:
+            if labels[hi] in l0_list:
                 l0.append(h)
             else:
                 l1.append(h)
@@ -1035,11 +1064,13 @@ class plot_chiral_fit():
         #handles, labels = ax.get_legend_handles_labels()
         #l0 = [handles[0],handles[-1]]
         #l1 = [handles[i] for i in range(len(handles)-2,0,-1)]
+        l0_list = ['$g_A^{LQCD}(\epsilon_\pi^{phys.},\epsilon_a)$',\
+            '$g_A^{PDG}=1.2723(23)$']
         l0 = []
         l1 = []
         handles, labels = ax.get_legend_handles_labels()
         for hi,h in enumerate(handles):
-            if labels[hi] in ['$g_A^{LQCD}(\epsilon_\pi^{phys.},\epsilon_a)$','$g_A^{PDG}=1.2723(23)$']:
+            if labels[hi] in l0_list:
                 l0.append(h)
             else:
                 l1.append(h)
