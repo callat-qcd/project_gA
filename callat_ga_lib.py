@@ -1176,7 +1176,7 @@ class plot_chiral_fit():
             plt.savefig('%s/fv_modelavg.pdf' %(self.loc),transparent=True)
         plt.draw()
 
-def mpi_corr(s,phys,r):
+def mpi_corr(s,phys,r,w_me):
     epi_mpi = {'m130':0.11347,'m220':0.18156,'m310':0.24485,\
         'm350':0.27063,'m400':0.29841}
     epi_all = [(phys['mpi']/2/np.sqrt(2)/np.pi/phys['fpi']).mean]
@@ -1206,18 +1206,38 @@ def mpi_corr(s,phys,r):
     print('e_pi')
     print(['%.5f' %e for e in epi_all])
     for a in r:
-        string = a+' & '
+        string = a
         for i,ri in enumerate(dcorr[a]['corr'][0,:]):
-            string += '%.5f & ' %ri
+            string += ' & %.4f ' %ri
         print(string)
-    print('\nE(phys,mpi)')
+    print('\ndelta_gA(mpi_phys,mpi)[%]')
     print('e_pi')
-    print(['%.5f' %e for e in epi_all])
+    print(['%.5f' %e for e in epi_all[1:]])
+    wi = []
+    dg = []
+    avg = []
+    fits = []
     for a in r:
-        string = a+' & '
-        for i,ri in enumerate(dcorr[a]['eyx']):
-            string += '%.4f & ' %ri
-        print(string)
+        fits.append(a)
+        wi.append(w_me['weights'][a])
+        dg.append(dcorr[a]['eyx'][1:]/r[a]['phys']['result'].mean)
+        avg.append(r[a]['phys']['result'].mean)
+        string = a
+        s2 = a
+        for i,ri in enumerate(dcorr[a]['eyx'][1:]):
+            string += ' & %.4f ' %ri # shift
+            s2 += ' & %.2f ' %(dg[-1][i]*100) # %shift vs mean
+            # 20 January 2018, verified percent matches shift -Andre
+        #print(string)
+        print(s2)
+    dg = np.array(dg)
+    wi = np.array(wi)
+    avg = np.array(avg)
+    string = 'model avg'
+    for i in range(len(epi_all)-1):
+        string += ' & %.2f' %(np.sum(wi*dg[:,i]*avg/w_me['E(gA)'])*100)
+        # taking the weigthed avg of dg is same as weighted avg of shift
+    print(string)
 
 if __name__=='__main__':
     print("chipt library")
