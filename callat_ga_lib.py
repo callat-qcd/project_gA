@@ -1175,5 +1175,49 @@ class plot_chiral_fit():
         if s['save_figs']:
             plt.savefig('%s/fv_modelavg.pdf' %(self.loc),transparent=True)
         plt.draw()
+
+def mpi_corr(s,phys,r):
+    epi_mpi = {'m130':0.11347,'m220':0.18156,'m310':0.24485,\
+        'm350':0.27063,'m400':0.29841}
+    epi_all = [(phys['mpi']/2/np.sqrt(2)/np.pi/phys['fpi']).mean]
+    for m in ['m130','m220','m310','m350','m400']:
+        if any(m in ms for ms in s['ensembles']):
+            epi_all.append(epi_mpi[m])
+    dcorr = dict()
+    for a in r:
+        fit = r[a]['fit']
+        fitc = r[a]['fitc']
+        fitc.FV = False
+        x = {'afs': 0}
+        priorx = dict()
+        for k in fit.p.keys():
+            if k == 'epi':
+                priorx[k] = np.array(epi_all)
+            elif k == 'aw0':
+                priorx[k] = 0
+            else:
+                priorx[k] = fit.p[k]
+        extrap = fitc.fit_function(x,priorx)
+        y = dict()
+        y['corr'] = gv.evalcorr(extrap)
+        y['eyx'] = extrap[0].sdev*y['corr'][1,:]
+        dcorr[a] = y
+    print('Correlation')
+    print('e_pi')
+    print(['%.5f' %e for e in epi_all])
+    for a in r:
+        string = a+' & '
+        for i,ri in enumerate(dcorr[a]['corr'][0,:]):
+            string += '%.5f & ' %ri
+        print(string)
+    print('\nE(phys,mpi)')
+    print('e_pi')
+    print(['%.5f' %e for e in epi_all])
+    for a in r:
+        string = a+' & '
+        for i,ri in enumerate(dcorr[a]['eyx']):
+            string += '%.4f & ' %ri
+        print(string)
+
 if __name__=='__main__':
     print("chipt library")
