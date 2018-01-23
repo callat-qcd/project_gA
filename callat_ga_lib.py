@@ -1198,6 +1198,7 @@ def mpi_corr(s,phys,r,w_me):
             else:
                 priorx[k] = fit.p[k]
         extrap = fitc.fit_function(x,priorx)
+        #print(extrap)
         y = dict()
         y['corr'] = gv.evalcorr(extrap)
         y['eyx'] = extrap[0].sdev*y['corr'][1,:]
