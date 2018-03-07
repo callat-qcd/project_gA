@@ -607,7 +607,7 @@ class plot_chiral_fit():
             leg_data = ax.legend(handles=l1,numpoints=1,loc=4,ncol=2,\
                 fontsize=fs_l,edgecolor='k',fancybox=False)
             plt.gca().add_artist(leg)
-            [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+            [ax.spines[key].set_linewidth(lw) for key in ax.spines]
             leg.get_frame().set_linewidth(lw)
             leg_data.get_frame().set_linewidth(lw)
 
@@ -666,7 +666,7 @@ class plot_chiral_fit():
             ax.xaxis.set_tick_params(labelsize=ts,width=lw)
             ax.yaxis.set_tick_params(labelsize=ts,width=lw)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
-            [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+            [ax.spines[key].set_linewidth(lw) for key in ax.spines]
             leg.get_frame().set_linewidth(lw)
 
             if s['save_figs']:
@@ -805,7 +805,7 @@ class plot_chiral_fit():
             ax.xaxis.set_tick_params(labelsize=ts,width=lw)
             ax.yaxis.set_tick_params(labelsize=ts,width=lw)
             ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
-            [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+            [ax.spines[key].set_linewidth(lw) for key in ax.spines]
             if s['save_figs']:
                 plt.savefig('%s/continuum_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
             plt.draw()
@@ -891,7 +891,7 @@ class plot_chiral_fit():
                 ax.xaxis.set_tick_params(labelsize=ts,width=lw)
                 ax.yaxis.set_tick_params(labelsize=ts,width=lw)
                 ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
-                [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+                [ax.spines[key].set_linewidth(lw) for key in ax.spines]
                 if s['save_figs']:
                     plt.savefig('%s/volume_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
                 plt.draw()
@@ -944,7 +944,7 @@ class plot_chiral_fit():
         frame.axes.get_yaxis().set_visible(False)
         ax.xaxis.set_tick_params(labelsize=ts,width=lw)
         # legend line width
-        [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+        [ax.spines[key].set_linewidth(lw) for key in ax.spines]
         leg.get_frame().set_linewidth(lw)
 
         if s['save_figs']:
@@ -1036,7 +1036,7 @@ class plot_chiral_fit():
         ax.xaxis.set_tick_params(labelsize=ts,width=lw)
         ax.yaxis.set_tick_params(labelsize=ts,width=lw)
         ax.set_title('model average',fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
-        [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+        [ax.spines[key].set_linewidth(lw) for key in ax.spines]
         leg.get_frame().set_linewidth(lw)
         leg_data.get_frame().set_linewidth(lw)
         #lleg = plt.gca().get_legend()
@@ -1117,7 +1117,7 @@ class plot_chiral_fit():
         ax.yaxis.set_tick_params(labelsize=ts,width=lw)
         ax.set_title('model average',fontdict={'fontsize':fs_xy,\
             'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
-        [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+        [ax.spines[key].set_linewidth(lw) for key in ax.spines]
         leg.get_frame().set_linewidth(lw)
         leg_data.get_frame().set_linewidth(lw)
         #plt.setp(plt.gca().get_legend().get_lines(),linewidth=lw)
@@ -1169,7 +1169,7 @@ class plot_chiral_fit():
         ax.xaxis.set_tick_params(labelsize=ts,width=lw)
         ax.yaxis.set_tick_params(labelsize=ts,width=lw)
         ax.set_title('model average',fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
-        [i.set_linewidth(lw) for i in ax.spines.itervalues()]
+        [ax.spines[key].set_linewidth(lw) for key in ax.spines]
         leg.get_frame().set_linewidth(lw)
 
         if s['save_figs']:
