@@ -10,7 +10,6 @@
 # project g<sub>A</sub>
 
 This project is for the analysis code and data files for our calculation of g<sub>A</sub> with MDWF on HISQ, and contains the following:
-* `setup.py`: Setup file for Python environment
 * `ga_workbook.ipynb`: Jupyter notebook for chiral-continuum extrapolation analysis used in the final analysis
 * `data`: Directory of data
   * `github_ga_v1.csv`: Bootstrapped correlation function analysis results in csv format
