@@ -8,6 +8,7 @@ np.set_printoptions(linewidth=180)
 import fit_functions as fit_fh
 import iminuit as mn
 import random
+import tqdm
 import theano as th
 import theano.tensor as Tn
 
@@ -23,6 +24,7 @@ params = dict()
 params['tau'] = 1
 params['a09m310'] = dict()
 params['a09m310']['seed'] = 'a09m310'
+params['bs'] = False
 params['a09m310']['Nbs']  = 5000
 params['a09m310']['t_min_max'] = {
     'proton':[9,16],
@@ -37,13 +39,13 @@ params['a09m310']['fit_ini'] = {
     'zs_1'  :1.3e-5,
     'zp_1'  :3.1e-3,
     'gA_00' :1.27,
+    'gV_00' :1.02,
     'gA_11' :1.55,
     'gA_10' :-.01,
     'dAss_0':-4.7e-10,
     'dAps_0':-6.2e-8,
     'dAss_1':-4.2e-10,
     'dAps_1':1.5e-8,
-    'gV_00' :1.02,
     'gV_11' :1.06,
     'gV_10' :-0.066,
     'dVss_0':3.9e-10,
@@ -184,12 +186,117 @@ def fit(ens,params):
     dof = len(y) - len(lam)
     print("chi^2 = %.4f, dof = %d, Q=%.4f" %(min_fh.fval,dof,fit_fh.p_val(min_fh.fval,dof)))
 
+    if params['bs']:
+        ini_vals_bs = dict(ini_vals)
+        bs_lams = dict()
+        for k in min_fh.values:
+            ini_vals_bs[k] = min_fh.values[k]
+            ini_vals['error_'+k] = 0.2*min_fh.errors[k]
+            bs_lams[k] = np.zeros([params['a09m310']['Nbs']])
+        bs_fits = []
+        #for bs in tqdm.tqdm(range(params[ens]['Nbs']),desc='Nbs'):
+        for bs in tqdm.tqdm(range(params['a09m310']['Nbs']),desc='Nbs'):
+            chisq_fh = Chisq(y_bs[bs],cov_inv,ens,params)
+            min_fh_bs = mn.Minuit(chisq_fh, pedantic=False, print_level=0,**ini_vals_bs)
+            min_fh_bs.migrad()
+            bs_fits.append(min_fh_bs)
+            for k in min_fh_bs.values:
+                bs_lams[k][bs] = min_fh_bs.values[k]
+        print(bs_lams['gA_00'].mean(),bs_lams['gA_00'].std())
     return min_fh
+
+def plot_results(ens,params,mn):
+    lam_all = mn.parameters
+    p_all = {k:mn.values[k] for k in lam_all}
+    l_ss = ['E_0','dE_10','zs_0','zs_1']
+    l_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1']
+    l_ga_ss = ['E_0','dE_10','zs_0','zs_1','gA_00','gA_11','gA_10','dAss_0','dAss_1']
+    l_ga_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1',\
+        'gA_00','gA_11','gA_10','dAss_0','dAps_0','dAss_1','dAps_1']
+    l_gv_ss = ['E_0','dE_10','zs_0','zs_1','gV_00','gV_11','gV_10','dVss_0','dVss_1']
+    l_gv_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1',\
+        'gV_00','gV_11','gV_10','dVss_0','dVps_0','dVss_1','dVps_1']
+
+    i_ss = [i for i,l in enumerate(lam_all) if l not in l_ss]
+    i_ps = [i for i,l in enumerate(lam_all) if l not in l_ps]
+    i_ga_ss = [i for i,l in enumerate(lam_all) if l not in l_ga_ss]
+    i_ga_ps = [i for i,l in enumerate(lam_all) if l not in l_ga_ps]
+    i_gv_ss = [i for i,l in enumerate(lam_all) if l not in l_gv_ss]
+    i_gv_ps = [i for i,l in enumerate(lam_all) if l not in l_gv_ps]
+
+    cov_param = np.array(mn.matrix(correlation=False))
+    cov_p_ss = np.delete(np.delete(cov_param,i_ss,axis=0),i_ss,axis=1)
+    cov_p_ps = np.delete(np.delete(cov_param,i_ps,axis=0),i_ps,axis=1)
+    cov_ga_ss = np.delete(np.delete(cov_param,i_ga_ss,axis=0),i_ga_ss,axis=1)
+    cov_ga_ps = np.delete(np.delete(cov_param,i_ga_ps,axis=0),i_ga_ps,axis=1)
+    cov_gv_ss = np.delete(np.delete(cov_param,i_gv_ss,axis=0),i_gv_ss,axis=1)
+    cov_gv_ps = np.delete(np.delete(cov_param,i_gv_ps,axis=0),i_gv_ps,axis=1)
+
+    y,y_bs  = get_data(ens,params)
+    t_p_i ,t_p_f  = params[ens]['t_min_max']['proton']
+    t_p = t_p_f+1-t_p_i
+    p_ss = y[0:t_p]
+    p_ss_bs = y_bs[:,0:t_p]
+    p_ps = y[t_p:2*t_p]
+    p_ps_bs = y_bs[:,t_p:2*t_p]
+    eff_ps = np.log(p_ps / np.roll(p_ps,-1))
+    eff_ps_bs = np.log(p_ps_bs / np.roll(p_ps_bs,-1,axis=1))
+    eff_ss = np.log(p_ss / np.roll(p_ss,-1))
+    eff_ss_bs = np.log(p_ss_bs / np.roll(p_ss_bs,-1,axis=1))
+
+    t_2p = np.arange(t_p_i,t_p_f+.1,.1)
+    dt = t_2p[1] - t_2p[0]
+
+    t,tau,e0,zs0,zp0,de10,zs1,zp1 = Tn.dscalars('t','tau','e0','zs0','zp0','de10','zs1','zp1')
+    gA00,gA11,gA10,gV00,gV11,gV10 = Tn.dscalars('gA00','gA11','gA10','gV00','gV11','gV10')
+    ds0,dp0,ds1,dp1 = Tn.dscalars('ds0','dp0','ds1','dp1')
+
+    th_2pt_ss = zs0*zs0*Tn.exp(-t*e0) + zs1*zs1*Tn.exp(-t*(e0+de10))
+    th_2pt_tau_ss = zs0*zs0*Tn.exp(-(t+tau)*e0) + zs1*zs1*Tn.exp(-(t+tau)*(e0+de10))
+    th_eff_ss = Tn.log( th_2pt_ss / th_2pt_tau_ss ) / tau
+    th_deff_ss = Tn.grad(th_eff_ss,[e0,zs0,de10,zs1])
+    th_deff_ss_def = th.function([t,tau,e0,zs0,de10,zs1],th_deff_ss)
+    th_deff_ss_fun = lambda t,tau: \
+        th_deff_ss_def(t,tau,p_all['E_0'],p_all['zs_0'],p_all['dE_10'],p_all['zs_1'])
+
+    th_2pt_ps = zp0*zs0*Tn.exp(-t*e0) + zp1*zs1*Tn.exp(-t*(e0+de10))
+    th_2pt_tau_ps = zp0*zs0*Tn.exp(-(t+tau)*e0) + zp1*zs1*Tn.exp(-(t+tau)*(e0+de10))
+    th_eff_ps = Tn.log( th_2pt_ps / th_2pt_tau_ps ) / tau
+    th_deff_ps = Tn.grad(th_eff_ps,[e0,zp0,zs0,de10,zp1,zs1])
+    th_deff_ps_def = th.function([t,tau,e0,zp0,zs0,de10,zp1,zs1],th_deff_ps)
+    th_deff_ps_fun = lambda t,tau: \
+        th_deff_ps_def(t,tau,p_all['E_0'],p_all['zp_0'],p_all['zs_0'],\
+            p_all['dE_10'],p_all['zp_1'],p_all['zs_1'])
+    p_ps = dict(p_all)
+    p_ps['snk_0'] = p_ps['zp_0']
+    p_ps['snk_1'] = p_ps['zp_1']
+    p_ps['src_0'] = p_ps['zs_0']
+    p_ps['src_1'] = p_ps['zs_1']
+    ps_fit = fit_fh.c2pt(t_2p,**p_ps)
+    ss_fit = fit_fh.c2pt(t_2p,**p_ps)
+    eff_fit_ss = np.log(ss_fit / np.roll(ss_fit,-1)) / dt
+    eff_fit_ps = np.log(ps_fit / np.roll(ps_fit,-1)) / dt
+    err_ps = np.zeros_like(t_2p)
+    err_ss = np.zeros_like(t_2p)
+    for i,t in enumerate(t_2p):
+        err_ps[i] = np.sqrt(np.dot(th_deff_ps_fun(t,dt),np.dot(cov_p_ps,th_deff_ps_fun(t,dt))))
+        err_ss[i] = np.sqrt(np.dot(th_deff_ss_fun(t,dt),np.dot(cov_p_ss,th_deff_ss_fun(t,dt))))
+
+    fig = plt.figure('2pt')
+    ax = plt.axes([.14,.14,.8,.8])
+    ax.fill_between(t_2p,eff_fit_ps-err_ps,eff_fit_ps+err_ps,color='r',alpha=.3)
+    ax.fill_between(t_2p,eff_fit_ss-err_ss,eff_fit_ss+err_ss,color='k',alpha=.3)
+    ax.errorbar(np.arange(t_p_i,t_p_f+1),eff_ps,yerr=eff_ps_bs.std(axis=0),linestyle='None',\
+        color='r',marker='s',mfc='None',mec='r')
+    ax.errorbar(np.arange(t_p_i,t_p_f+1),eff_ss,yerr=eff_ss_bs.std(axis=0),linestyle='None',\
+        color='k',marker='s',mfc='None',mec='k')
+    ax.axis([0,20,0.4,.6])
 
 if __name__ == "__main__":
     plt.ion()
 
     min_fh = fit('a09m310',params)
+    plot_results('a09m310',params,min_fh)
 
     plt.ioff()
     if run_from_ipython():

@@ -1,7 +1,5 @@
 import numpy as np
 import scipy.special as spsp
-import theano as th
-import theano.tensor as Tn
 
 def bs_corr(corr,Nbs,Mbs,seed=None):
     corr_bs = np.zeros(tuple([Nbs]) + corr.shape[1:],dtype=corr.dtype)
@@ -20,7 +18,7 @@ def dmdl(c0,cl,tau=1,t_col=1):
     r = cl / c0
     return 1./tau * (np.roll(r,-tau,axis=t_col) - r)
 
-def c2pt(t,E_0,snk_0,src_0,dE_10=0.,snk_1=0.,src_1=0.,dE_21=0.,snk_2=0.,src_2=0.):
+def c2pt(t,E_0,snk_0,src_0,dE_10=0.,snk_1=0.,src_1=0.,dE_21=0.,snk_2=0.,src_2=0.,**kwargs):
     '''
     Fit two point correlation function up to 3 states
     '''
