@@ -37,7 +37,8 @@ else:
     fs3_base = 7 #4.66666667
     fig_size3 = (fs3_base,fs3_base/gr)
 plt_axes = [0.14,0.165,0.825,0.825]
-
+n_linspace = 3501
+n_linspace = 101
 
 if not os.path.exists('plots'):
     os.makedirs('plots')
@@ -509,7 +510,7 @@ class plot_chiral_fit():
         def c_chiral(ax,result):
             fit = result['fit']
             fitc = result['fitc']
-            epi_extrap = np.linspace(0.0001,0.3501,3501)
+            epi_extrap = np.linspace(0.0001,0.3501,n_linspace)
             aw0_list = [gv.gvar(0.8804,0.003), gv.gvar(0.7036,0.005), gv.gvar(0.5105,0.003)]
             afs_list = [0.58801,0.53796,0.43356]
             pp = self.plot_params
@@ -535,7 +536,7 @@ class plot_chiral_fit():
         def c_continuum(ax,result):
             fit = result['fit']
             fitc = result['fitc']
-            epi_extrap = np.linspace(0.0001,0.3501,3501)
+            epi_extrap = np.linspace(0.0001,0.3501,n_linspace)
             fitc.FV = False
             x = {'afs': 0}
             priorx = dict()
