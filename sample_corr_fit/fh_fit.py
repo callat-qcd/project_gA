@@ -111,12 +111,12 @@ class Chisq():
         self.t_p_i ,self.t_p_f  = params[ens]['t_min_max']['proton']
         self.t_gA_i,self.t_gA_f = params[ens]['t_min_max']['gA']
         self.t_gV_i,self.t_gV_f = params[ens]['t_min_max']['gV']
-        self.nt_2p = self.t_p_f+1  - self.t_p_i
-        self.nt_gA = self.t_gA_f+1 - self.t_gA_i
-        self.nt_gV = self.t_gV_f+1 - self.t_gV_i
-        self.t_2p  = np.arange(self.t_p_i,self.t_p_f+1)
-        self.t_gA  = np.arange(self.t_gA_i,self.t_gA_f+1)
-        self.t_gV  = np.arange(self.t_gV_i,self.t_gV_f+1)
+        self.nt0 = self.t_p_f+1  - self.t_p_i
+        self.nt1 = self.t_gA_f+1 - self.t_gA_i
+        self.nt2 = self.t_gV_f+1 - self.t_gV_i
+        self.t0  = np.arange(self.t_p_i,self.t_p_f+1)
+        self.t1  = np.arange(self.t_gA_i,self.t_gA_f+1)
+        self.t2  = np.arange(self.t_gV_i,self.t_gV_f+1)
         self.tau   = params['tau']
 
     def __call__(self,\
@@ -128,26 +128,28 @@ class Chisq():
         dVss_0,dVps_0,dVss_1,dVps_1):
         f = np.zeros_like(self.y)
         # 2pt SS
-        f[0:self.nt_2p] = fit_fh.c2pt(self.t_2p,E_0,zs_0,zs_0,\
-            dE_10=dE_10,snk_1=zs_1,src_1=zs_1)
+        f[                              0 : self.nt0                       ] = \
+            fit_fh.c2pt(self.t0,E_0,zs_0,zs_0,\
+                dE_10=dE_10,snk_1=zs_1,src_1=zs_1)
         # 2pt PS
-        f[self.nt_2p:2*self.nt_2p] = fit_fh.c2pt(self.t_2p,E_0,zp_0,zs_0,\
-            dE_10=dE_10,snk_1=zp_1,src_1=zs_1)
+        f[                       self.nt0 : 2*self.nt0                     ] = \
+            fit_fh.c2pt(self.t0,E_0,zp_0,zs_0,\
+                dE_10=dE_10,snk_1=zp_1,src_1=zs_1)
         # gA SS
-        f[2*self.nt_2p:2*self.nt_2p+self.nt_gA] = \
-            fit_fh.fh_derivative(self.t_gA,self.tau,E_0,zs_0,zs_0,gA_00,dAss_0,\
+        f[                     2*self.nt0 : 2*self.nt0 +self.nt1           ] = \
+            fit_fh.fh_derivative(self.t1,self.tau,E_0,zs_0,zs_0,gA_00,dAss_0,\
                 dE_10=dE_10, snk_1=zs_1, src_1=zs_1, g_11=gA_11, g_10=gA_10,d_1=dAss_1)
         # gA PS
-        f[2*self.nt_2p+self.nt_gA:2*(self.nt_2p+self.nt_gA)] = \
-            fit_fh.fh_derivative(self.t_gA,self.tau,E_0,zp_0,zs_0,gA_00,dAps_0,\
+        f[           2*self.nt0 +self.nt1 : 2*(self.nt0+self.nt1)          ] = \
+            fit_fh.fh_derivative(self.t1,self.tau,E_0,zp_0,zs_0,gA_00,dAps_0,\
                 dE_10=dE_10, snk_1=zp_1, src_1=zs_1, g_11=gA_11, g_10=gA_10,d_1=dAps_1)
         # gV SS
-        f[2*(self.nt_2p+self.nt_gA):2*(self.nt_2p+self.nt_gA)+self.nt_gV] = \
-            fit_fh.fh_derivative(self.t_gV,self.tau,E_0,zs_0,zs_0,gV_00,dVss_0,\
+        f[          2*(self.nt0+self.nt1) : 2*(self.nt0+self.nt1) +self.nt2] = \
+            fit_fh.fh_derivative(self.t2,self.tau,E_0,zs_0,zs_0,gV_00,dVss_0,\
                 dE_10=dE_10, snk_1=zs_1, src_1=zs_1, g_11=gV_11, g_10=gV_10,d_1=dVss_1)
         # gV PS
-        f[2*(self.nt_2p+self.nt_gA)+self.nt_gV:2*(self.nt_2p+self.nt_gA+self.nt_gV)] = \
-            fit_fh.fh_derivative(self.t_gV,self.tau,E_0,zp_0,zs_0,gV_00,dVps_0,\
+        f[2*(self.nt0+self.nt1) +self.nt2 : 2*(self.nt0+self.nt1+self.nt2)] = \
+            fit_fh.fh_derivative(self.t2,self.tau,E_0,zp_0,zs_0,gV_00,dVps_0,\
                 dE_10=dE_10, snk_1=zp_1, src_1=zs_1, g_11=gV_11, g_10=gV_10,d_1=dVps_1)
 
         dy = f - self.y
@@ -249,16 +251,16 @@ def plot_results(ens,params,mn):
 
     t,tau,e0,zs0,zp0,de10,zs1,zp1 = Tn.dscalars('t','tau','e0','zs0','zp0','de10','zs1','zp1')
     gA00,gA11,gA10,gV00,gV11,gV10 = Tn.dscalars('gA00','gA11','gA10','gV00','gV11','gV10')
-    ds0,dp0,ds1,dp1 = Tn.dscalars('ds0','dp0','ds1','dp1')
+    ds0,dp0,ds1,dp1               = Tn.dscalars('ds0','dp0','ds1','dp1')
 
-    th_2pt_ss = zs0*zs0*Tn.exp(-t*e0) + zs1*zs1*Tn.exp(-t*(e0+de10))
-    th_2pt_tau_ss = zs0*zs0*Tn.exp(-(t+tau)*e0) + zs1*zs1*Tn.exp(-(t+tau)*(e0+de10))
+    th_2pt_ss = zs0**2 *Tn.exp(-t*e0) + zs1**2 *Tn.exp(-t*(e0+de10))
+    th_2pt_tau_ss = zs0**2 *Tn.exp(-(t+tau)*e0) + zs1**2 *Tn.exp(-(t+tau)*(e0+de10))
     th_eff_ss = Tn.log( th_2pt_ss / th_2pt_tau_ss ) / tau
-    th_deff_ss = Tn.grad(th_eff_ss,[e0,zs0,de10,zs1])
-    th_deff_ss_def = th.function([t,tau,e0,zs0,de10,zs1],th_deff_ss)
+    th_deff_ss = Tn.grad(th_eff_ss,[e0,de10,zs0,zs1])
+    th_deff_ss_def = th.function([t,tau,e0,de10,zs0,zs1],th_deff_ss)
     th_deff_ss_fun = lambda t,tau: \
-        th_deff_ss_def(t,tau,p_all['E_0'],p_all['zs_0'],p_all['dE_10'],p_all['zs_1'])
-
+        th_deff_ss_def(t,tau,p_all['E_0'],p_all['dE_10'],p_all['zs_0'],p_all['zs_1'])
+    '''
     th_2pt_ps = zp0*zs0*Tn.exp(-t*e0) + zp1*zs1*Tn.exp(-t*(e0+de10))
     th_2pt_tau_ps = zp0*zs0*Tn.exp(-(t+tau)*e0) + zp1*zs1*Tn.exp(-(t+tau)*(e0+de10))
     th_eff_ps = Tn.log( th_2pt_ps / th_2pt_tau_ps ) / tau
@@ -273,18 +275,29 @@ def plot_results(ens,params,mn):
     p_ps['src_0'] = p_ps['zs_0']
     p_ps['src_1'] = p_ps['zs_1']
     ps_fit = fit_fh.c2pt(t_2p,**p_ps)
-    ss_fit = fit_fh.c2pt(t_2p,**p_ps)
-    eff_fit_ss = np.log(ss_fit / np.roll(ss_fit,-1)) / dt
-    eff_fit_ps = np.log(ps_fit / np.roll(ps_fit,-1)) / dt
     err_ps = np.zeros_like(t_2p)
+    eff_fit_ps = np.log(ps_fit / np.roll(ps_fit,-1)) / dt
+    '''
+    parr = dict()
+    for p in l_ss:
+        if 'zs' in p:
+            n = p.split('_')[-1]
+            parr['src_'+n] = p_all[p]
+            parr['snk_'+n] = p_all[p]
+        else:
+            parr[p] = p_all[p]
+    print(parr)
+    ss_fit = fit_fh.c2pt(t_2p,**parr)
+    eff_fit_ss = np.log(ss_fit / np.roll(ss_fit,-1)) / dt
+    eff_fit_ss[-1] = eff_fit_ss[-2] 
     err_ss = np.zeros_like(t_2p)
     for i,t in enumerate(t_2p):
-        err_ps[i] = np.sqrt(np.dot(th_deff_ps_fun(t,dt),np.dot(cov_p_ps,th_deff_ps_fun(t,dt))))
+        #err_ps[i] = np.sqrt(np.dot(th_deff_ps_fun(t,dt),np.dot(cov_p_ps,th_deff_ps_fun(t,dt))))
         err_ss[i] = np.sqrt(np.dot(th_deff_ss_fun(t,dt),np.dot(cov_p_ss,th_deff_ss_fun(t,dt))))
 
     fig = plt.figure('2pt')
     ax = plt.axes([.14,.14,.8,.8])
-    ax.fill_between(t_2p,eff_fit_ps-err_ps,eff_fit_ps+err_ps,color='r',alpha=.3)
+    #ax.fill_between(t_2p,eff_fit_ps-err_ps,eff_fit_ps+err_ps,color='r',alpha=.3)
     ax.fill_between(t_2p,eff_fit_ss-err_ss,eff_fit_ss+err_ss,color='k',alpha=.3)
     ax.errorbar(np.arange(t_p_i,t_p_f+1),eff_ps,yerr=eff_ps_bs.std(axis=0),linestyle='None',\
         color='r',marker='s',mfc='None',mec='r')
