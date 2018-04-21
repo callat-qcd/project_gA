@@ -11,7 +11,7 @@ import random
 import tqdm
 import theano as th
 import theano.tensor as Tn
-
+import fit_params as fitp
 
 def run_from_ipython():
     try:
@@ -29,23 +29,23 @@ def rgb(ens):
         clr = '#51a7f9'
     return clr
 
-params = dict()
+ens = 'a09m310'
+params = fitp.params
 params['tau'] = 1
-params['a09m310'] = dict()
-params['a09m310']['seed'] = 'a09m310'
 params['bs'] = False
-params['a09m310']['Nbs']  = 5000
-params['a09m310']['t_min_max'] = {
+params[ens]['seed'] = ens
+params[ens]['Nbs']  = 5000
+params[ens]['t_min_max'] = {
     'proton':[9,16],
     'gA'    :[3,12],
     'gV'    :[7,17]
 }
-params['a09m310']['plt_range'] = {
+params[ens]['plt_range'] = {
     'proton':[7,18,0.47,0.55],
     'gA'    :[0,15,1.1,1.5],
     'gV'    :[5,20,1.015,1.035]
 }
-params['a09m310']['fit_ini'] = {
+params[ens]['fit_ini'] = {
     'E_0'   :.49241,
     'dE_10' :.408,
     'zs_0'  :2.2e-5,
@@ -73,7 +73,7 @@ def get_data(ens,params,alldata=False,verbose=False):
     t_gA_i,t_gA_f = params[ens]['t_min_max']['gA']
     t_gV_i,t_gV_f = params[ens]['t_min_max']['gV']
     tau = params['tau']
-    dfile = h5.open_file('callat_gA.a09m310.h5')
+    dfile = h5.open_file('callat_gA.h5')
     proton = dfile.get_node('/proton/'+ens).read()
     gA     = dfile.get_node('/gA/'+ens).read()
     gV     = dfile.get_node('/gV/'+ens).read()
@@ -185,9 +185,9 @@ def fit(ens,params):
     for k in params[ens]['fit_ini']:
         ini_vals[k] = params[ens]['fit_ini'][k]
         if 'dA' in k or 'dV' in k:
-            ini_vals['error_'+k] = 0.05*params[ens]['fit_ini'][k]
+            ini_vals['error_'+k] = 0.005*params[ens]['fit_ini'][k]
         else:
-            ini_vals['error_'+k] = 0.05*params[ens]['fit_ini'][k]
+            ini_vals['error_'+k] = 0.005*params[ens]['fit_ini'][k]
     ini_vals['limit_dE_10'] = (0,10)
     ini_vals['limit_zs_0'] = (0,1)
     ini_vals['limit_zs_1'] = (0,1)
