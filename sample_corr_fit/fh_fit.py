@@ -251,7 +251,7 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
     ax.axis(params[ens]['plt_range'][corr])
     ax.set_xlabel(r'$t$',fontsize=20)
     ax.set_ylabel(ylabel[corr],fontsize=20)
-    ax.legend(numpoints=1,fontsize=16,loc=1)
+    ax.legend(numpoints=1,fontsize=16,loc=2)
 
     ''' add Theano functions to plot fits '''
     lam_all = mn.parameters
