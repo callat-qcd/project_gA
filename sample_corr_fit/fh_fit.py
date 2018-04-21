@@ -31,6 +31,11 @@ params['a09m310']['t_min_max'] = {
     'gA'    :[3,12],
     'gV'    :[7,17]
 }
+params['a09m310']['plt_range'] = {
+    'proton':[0,20,0.47,0.55],
+    'gA'    :[],
+    'gV'    :[]
+}
 params['a09m310']['fit_ini'] = {
     'E_0'   :.49241,
     'dE_10' :.408,
@@ -54,7 +59,7 @@ params['a09m310']['fit_ini'] = {
     'dVps_1':-4.1e-10,
 }
 
-def get_data(ens,params,verbose=False):
+def get_data(ens,params,alldata=False,verbose=False):
     t_p_i ,t_p_f  = params[ens]['t_min_max']['proton']
     t_gA_i,t_gA_f = params[ens]['t_min_max']['gA']
     t_gV_i,t_gV_f = params[ens]['t_min_max']['gV']
@@ -102,7 +107,12 @@ def get_data(ens,params,verbose=False):
     y_bs[:,      2*(nt_2p+nt_gA) : 2*(nt_2p+nt_gA)+nt_gV] = fh_gV_bs[:,t_gV_i:t_gV_f+1,0]
     y_bs[:,2*(nt_2p+nt_gA)+nt_gV : 2*(nt_2p+nt_gA+nt_gV)] = fh_gV_bs[:,t_gV_i:t_gV_f+1,1]
 
-    return y,y_bs
+    if alldata:
+        d = [proton.mean(axis=0),fh_gA,fh_gV]
+        d_bs = [p_bs,fh_gA_bs,fh_gV_bs]
+        return d, d_bs
+    else:
+        return y,y_bs
 
 class Chisq():
     def __init__(self,y,cov_inv,ens,params):
@@ -207,9 +217,31 @@ def fit(ens,params):
         print(bs_lams['gA_00'].mean(),bs_lams['gA_00'].std())
     return min_fh
 
-def plot_results(ens,params,mn):
+def plot_results(ens,params,mn,corr,lam_lst,figname,\
+    figsize=(7,7/1.618034333)):
+    ''' plot data '''
+    clrs = ['k','r']
+    lbl     = ['SS','PS']
+    ylabel = {'proton':r'$m_{eff}(t)$','gA':r'$g_A^{FH}(t)$','gV':r'$g_V^{FH}(t)$'}
+    y,y_bs  = get_data(ens,params,alldata=True)
+    nt      = y[0].shape[0]
+
+    fig = plt.figure(figname)
+    ax = plt.axes([.14,.14,.8,.8])
+    for i in range(y[0].shape[-1]):
+        eff    = np.log(y[0][:,i] / np.roll(y[0][:,i],-1))
+        eff_bs = np.log(y_bs[0][:,:,i] / np.roll(y_bs[0][:,:,i],-1,axis=1))
+        ax.errorbar(np.arange(nt),eff,yerr=eff_bs.std(axis=0),linestyle='None',\
+            color=clrs[i],marker='s',mfc='None',mec=clrs[i],label=lbl[i])
+    ax.axis(params[ens]['plt_range'][corr])
+    ax.set_xlabel(r'$t$',fontsize=20)
+    ax.set_ylabel(ylabel[corr],fontsize=20)
+    ax.legend(numpoints=1,fontsize=16,loc=1)
+    """
     lam_all = mn.parameters
     p_all = {k:mn.values[k] for k in lam_all}
+
+
     l_ss = ['E_0','dE_10','zs_0','zs_1']
     l_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1']
     l_ga_ss = ['E_0','dE_10','zs_0','zs_1','gA_00','gA_11','gA_10','dAss_0','dAss_1']
@@ -234,17 +266,15 @@ def plot_results(ens,params,mn):
     cov_gv_ss = np.delete(np.delete(cov_param,i_gv_ss,axis=0),i_gv_ss,axis=1)
     cov_gv_ps = np.delete(np.delete(cov_param,i_gv_ps,axis=0),i_gv_ps,axis=1)
 
-    y,y_bs  = get_data(ens,params)
     t_p_i ,t_p_f  = params[ens]['t_min_max']['proton']
-    t_p = t_p_f+1-t_p_i
-    p_ss = y[0:t_p]
-    p_ss_bs = y_bs[:,0:t_p]
-    p_ps = y[t_p:2*t_p]
-    p_ps_bs = y_bs[:,t_p:2*t_p]
+    t_p     = t_p_f+1-t_p_i
+    p_ss    = y[0][:,0]
+    p_ss_bs = y_bs[0][:,:,0]
+    p_ps = y[0][:,1]
+    p_ps_bs = y_bs[0][:,:,1]
     eff_ps = np.log(p_ps / np.roll(p_ps,-1))
     eff_ps_bs = np.log(p_ps_bs / np.roll(p_ps_bs,-1,axis=1))
-    eff_ss = np.log(p_ss / np.roll(p_ss,-1))
-    eff_ss_bs = np.log(p_ss_bs / np.roll(p_ss_bs,-1,axis=1))
+
 
     t_2p = np.arange(t_p_i,t_p_f+.1,.1)
     dt = t_2p[1] - t_2p[0]
@@ -289,28 +319,21 @@ def plot_results(ens,params,mn):
     print(parr)
     ss_fit = fit_fh.c2pt(t_2p,**parr)
     eff_fit_ss = np.log(ss_fit / np.roll(ss_fit,-1)) / dt
-    eff_fit_ss[-1] = eff_fit_ss[-2] 
+    eff_fit_ss[-1] = eff_fit_ss[-2]
     err_ss = np.zeros_like(t_2p)
     for i,t in enumerate(t_2p):
         #err_ps[i] = np.sqrt(np.dot(th_deff_ps_fun(t,dt),np.dot(cov_p_ps,th_deff_ps_fun(t,dt))))
         err_ss[i] = np.sqrt(np.dot(th_deff_ss_fun(t,dt),np.dot(cov_p_ss,th_deff_ss_fun(t,dt))))
-
-    fig = plt.figure('2pt')
-    ax = plt.axes([.14,.14,.8,.8])
-    #ax.fill_between(t_2p,eff_fit_ps-err_ps,eff_fit_ps+err_ps,color='r',alpha=.3)
     ax.fill_between(t_2p,eff_fit_ss-err_ss,eff_fit_ss+err_ss,color='k',alpha=.3)
-    ax.errorbar(np.arange(t_p_i,t_p_f+1),eff_ps,yerr=eff_ps_bs.std(axis=0),linestyle='None',\
-        color='r',marker='s',mfc='None',mec='r')
-    ax.errorbar(np.arange(t_p_i,t_p_f+1),eff_ss,yerr=eff_ss_bs.std(axis=0),linestyle='None',\
-        color='k',marker='s',mfc='None',mec='k')
-    ax.axis([0,20,0.4,.6])
+    """
 
 if __name__ == "__main__":
     plt.ion()
 
     min_fh = fit('a09m310',params)
-    plot_results('a09m310',params,min_fh)
-
+    l_ss = ['E_0','dE_10','zs_0','zs_1']
+    l_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1']
+    plot_results('a09m310',params,min_fh,'proton',[l_ss,l_ps],'two_pt')
     plt.ioff()
     if run_from_ipython():
         plt.show(block=False)
