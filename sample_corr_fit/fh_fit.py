@@ -277,16 +277,20 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
 
     ''' define the theano scalars we need '''
     t,tau,e0,zs0,zp0,de10,zs1,zp1 = Tn.dscalars('t','tau','e0','zs0','zp0','de10','zs1','zp1')
-    gA00,gA11,gA10,gV00,gV11,gV10 = Tn.dscalars('gA00','gA11','gA10','gV00','gV11','gV10')
+    g00,g11,g10                   = Tn.dscalars('g00','g11','g10')
     ds0,dp0,ds1,dp1               = Tn.dscalars('ds0','dp0','ds1','dp1')
 
     ''' now construct the theano functions '''
     parr_ss = dict()
     for p in l_ss:
+        n = p.split('_')[-1]
         if 'zs' in p:
-            n = p.split('_')[-1]
             parr_ss['src_'+n] = p_all[p]
             parr_ss['snk_'+n] = p_all[p]
+        elif 'dA' in p or 'dV' in p:
+            parr_ss['d_'+n]   = p_all[p]
+        elif 'gA' in p or 'gV' in p:
+            parr_ss['g_'+n]   = p_all[p]
         else:
             parr_ss[p] = p_all[p]
     parr_ps = dict()
@@ -296,27 +300,97 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
             parr_ps['src_'+n] = p_all[p]
         elif 'zp' in p:
             parr_ps['snk_'+n] = p_all[p]
+        elif 'dA' in p or 'dV' in p:
+            parr_ps['d_'+n]   = p_all[p]
+        elif 'gA' in p or 'gV' in p:
+            parr_ps['g_'+n]   = p_all[p]
         else:
             parr_ps[p] = p_all[p]
+    ''' 2pt function '''
+    th_ss     = zs0**2 *Tn.exp(-t*e0) + zs1**2 *Tn.exp(-t*(e0+de10))
+    th_tau_ss = zs0**2 *Tn.exp(-(t+tau)*e0) + zs1**2 *Tn.exp(-(t+tau)*(e0+de10))
+    th_eff_ss   = Tn.log( th_ss / th_tau_ss ) / tau
+    d_th_eff_ss = Tn.grad(th_eff_ss,[e0,de10,zs0,zs1])
+    d_th_eff_ss_def = th.function([t,tau,e0,de10,zs0,zs1],d_th_eff_ss)
+    d_th_eff_ss_fun = lambda t,tau:\
+        d_th_eff_ss_def(t,tau,p_all['E_0'],p_all['dE_10'],\
+            p_all['zs_0'],p_all['zs_1'])
+
+    th_ps = zp0*zs0*Tn.exp(-t*e0) + zp1*zs1*Tn.exp(-t*(e0+de10))
+    th_tau_ps = zp0*zs0*Tn.exp(-(t+tau)*e0) + zp1*zs1*Tn.exp(-(t+tau)*(e0+de10))
+    th_eff_ps = Tn.log( th_ps / th_tau_ps ) / tau
+    d_th_eff_ps = Tn.grad(th_eff_ps,[e0,de10,zs0,zp0,zs1,zp1])
+    d_th_eff_ps_def = th.function([t,tau,e0,de10,zs0,zp0,zs1,zp1],d_th_eff_ps)
+    d_th_eff_ps_fun = lambda t,tau:\
+        d_th_eff_ps_def(t,tau,p_all['E_0'],p_all['dE_10'],\
+            p_all['zs_0'],p_all['zp_0'],p_all['zs_1'],p_all['zp_1'])
+    ''' FH gA function '''
+    g_00 = corr+'_00'
+    g_11 = corr+'_11'
+    g_10 = corr+'_10'
+    d_ss_0 = corr.replace('g','d')+'ss_0'
+    d_ss_1 = corr.replace('g','d')+'ss_1'
+    d_ps_0 = corr.replace('g','d')+'ps_0'
+    d_ps_1 = corr.replace('g','d')+'ps_1'
+
+    th_num_ss  = (t-1)*zs0**2 *Tn.exp(-t*e0)*g00
+    th_num_ss += (t-1)*zs1**2 *Tn.exp(-t*(e0+de10))*g11
+    th_num_ss += ds0*Tn.exp(-t*e0)
+    th_num_ss += ds1*Tn.exp(-t*(e0+de10))
+    th_num_ss += zs0*zs1*g10*(Tn.exp(-t*e0)*Tn.exp(-de10/2) - Tn.exp(-t*(e0+de10))*Tn.exp(de10/2))\
+        / (Tn.exp(de10 / 2) - Tn.exp(-de10 / 2))
+    th_num_ss += zs1*zs0*g10*(Tn.exp(-t*(e0+de10))*Tn.exp(de10/2) - Tn.exp(-t*e0)*Tn.exp(-de10/2))\
+        /(Tn.exp(-de10 / 2) - Tn.exp(de10 / 2))
+
+    th_num_dt_ss  = (t-1+tau)*zs0**2 *Tn.exp(-(t+tau)*e0)*g00
+    th_num_dt_ss += (t-1+tau)*zs1**2 *Tn.exp(-(t+tau)*(e0+de10))*g11
+    th_num_dt_ss += ds0*Tn.exp(-(t+tau)*e0)
+    th_num_dt_ss += ds1*Tn.exp(-(t+tau)*(e0+de10))
+    th_num_dt_ss += zs0*zs1*g10*\
+        (Tn.exp(-(t+tau)*e0)*Tn.exp(-de10/2) - Tn.exp(-(t+tau)*(e0+de10))*Tn.exp(de10/2))\
+        / (Tn.exp(de10 / 2) - Tn.exp(-de10 / 2))
+    th_num_dt_ss += zs1*zs0*g10*\
+        (Tn.exp(-(t+tau)*(e0+de10))*Tn.exp(de10/2) - Tn.exp(-(t+tau)*e0)*Tn.exp(-de10/2))\
+        /(Tn.exp(-de10 / 2) - Tn.exp(de10 / 2))
+
+    th_fh_ss = (th_num_dt_ss / th_tau_ss - th_num_ss / th_ss) / tau
+    th_fh_grad_ss = Tn.grad(th_fh_ss,[e0,de10,zs0,zs1,g00,g11,g10,ds0,ds1])
+    th_grad_ss_def = th.function([t,tau,e0,de10,zs0,zs1,g00,g11,g10,ds0,ds1],th_fh_grad_ss)
+    th_grad_ss_fun = lambda t,tau: \
+        th_grad_ss_def(t,tau,p_all['E_0'],p_all['dE_10'],p_all['zs_0'],p_all['zs_1'],\
+            p_all[g_00],p_all[g_11],p_all[g_10],\
+            p_all[d_ss_0],p_all[d_ss_1])
+    ''' FH PS '''
+    th_num_ps  = (t-1)*zp0*zs0 *Tn.exp(-t*e0)*g00
+    th_num_ps += (t-1)*zp1*zs1 *Tn.exp(-t*(e0+de10))*g11
+    th_num_ps += dp0*Tn.exp(-t*e0)
+    th_num_ps += dp1*Tn.exp(-t*(e0+de10))
+    th_num_ps += zp0*zs1*g10*(Tn.exp(-t*e0)*Tn.exp(-de10/2) - Tn.exp(-t*(e0+de10))*Tn.exp(de10/2))\
+        / (Tn.exp(de10 / 2) - Tn.exp(-de10 / 2))
+    th_num_ps += zp1*zs0*g10*(Tn.exp(-t*(e0+de10))*Tn.exp(de10/2) - Tn.exp(-t*e0)*Tn.exp(-de10/2))\
+        /(Tn.exp(-de10 / 2) - Tn.exp(de10 / 2))
+
+    th_num_dt_ps  = (t-1+tau)*zp0*zs0 *Tn.exp(-(t+tau)*e0)*g00
+    th_num_dt_ps += (t-1+tau)*zp1*zs1 *Tn.exp(-(t+tau)*(e0+de10))*g11
+    th_num_dt_ps += dp0*Tn.exp(-(t+tau)*e0)
+    th_num_dt_ps += dp1*Tn.exp(-(t+tau)*(e0+de10))
+    th_num_dt_ps += zp0*zs1*g10*\
+        (Tn.exp(-(t+tau)*e0)*Tn.exp(-de10/2) - Tn.exp(-(t+tau)*(e0+de10))*Tn.exp(de10/2))\
+        / (Tn.exp(de10 / 2) - Tn.exp(-de10 / 2))
+    th_num_dt_ps += zp1*zs0*g10*\
+        (Tn.exp(-(t+tau)*(e0+de10))*Tn.exp(de10/2) - Tn.exp(-(t+tau)*e0)*Tn.exp(-de10/2))\
+        /(Tn.exp(-de10 / 2) - Tn.exp(de10 / 2))
+
+    th_fh_ps = (th_num_dt_ps / th_tau_ps - th_num_ps / th_ps) / tau
+    th_fh_grad_ps = Tn.grad(th_fh_ps,[e0,de10,zs0,zp0,zs1,zp1,g00,g11,g10,dp0,dp1])
+    th_grad_ps_def = th.function([t,tau,e0,de10,zs0,zp0,zs1,zp1,g00,g11,g10,dp0,dp1],th_fh_grad_ps)
+    th_grad_ps_fun = lambda t,tau: \
+        th_grad_ps_def(t,tau,p_all['E_0'],p_all['dE_10'],\
+            p_all['zs_0'],p_all['zp_0'],p_all['zs_1'],p_all['zp_1'],\
+            p_all[g_00],p_all[g_11],p_all[g_10],\
+            p_all[d_ps_0],p_all[d_ps_1])
+
     if corr == 'proton':
-        th_ss     = zs0**2 *Tn.exp(-t*e0) + zs1**2 *Tn.exp(-t*(e0+de10))
-        th_tau_ss = zs0**2 *Tn.exp(-(t+tau)*e0) + zs1**2 *Tn.exp(-(t+tau)*(e0+de10))
-        th_eff_ss   = Tn.log( th_ss / th_tau_ss ) / tau
-        d_th_eff_ss = Tn.grad(th_eff_ss,[e0,de10,zs0,zs1])
-        d_th_eff_ss_def = th.function([t,tau,e0,de10,zs0,zs1],d_th_eff_ss)
-        d_th_eff_ss_fun = lambda t,tau:\
-            d_th_eff_ss_def(t,tau,p_all['E_0'],p_all['dE_10'],\
-                p_all['zs_0'],p_all['zs_1'])
-
-        th_ps = zp0*zs0*Tn.exp(-t*e0) + zp1*zs1*Tn.exp(-t*(e0+de10))
-        th_tau_ps = zp0*zs0*Tn.exp(-(t+tau)*e0) + zp1*zs1*Tn.exp(-(t+tau)*(e0+de10))
-        th_eff_ps = Tn.log( th_ps / th_tau_ps ) / tau
-        d_th_eff_ps = Tn.grad(th_eff_ps,[e0,de10,zs0,zp0,zs1,zp1])
-        d_th_eff_ps_def = th.function([t,tau,e0,de10,zs0,zp0,zs1,zp1],d_th_eff_ps)
-        d_th_eff_ps_fun = lambda t,tau:\
-            d_th_eff_ps_def(t,tau,p_all['E_0'],p_all['dE_10'],\
-                p_all['zs_0'],p_all['zp_0'],p_all['zs_1'],p_all['zp_1'])
-
         fit_ss = fit_fh.c2pt(tp,**parr_ss)
         eff_ss = np.log(fit_ss / np.roll(fit_ss,-1)) / dt
         eff_ss[-1] = eff_ss[-2]
@@ -331,28 +405,46 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
                 d_th_eff_ss_fun(t,dt),np.dot(cov_ss,d_th_eff_ss_fun(t,dt))))
             err_ps[i] = np.sqrt(np.dot(\
                 d_th_eff_ps_fun(t,dt),np.dot(cov_ps,d_th_eff_ps_fun(t,dt))))
-        ax.fill_between(tp,eff_ss-err_ss,eff_ss+err_ss,color=clrs[0],alpha=.3)
-        ax.fill_between(tp,eff_ss-err_ss,eff_ss+err_ss,color=clrs[1],alpha=.3)
+    elif corr in ['gA','gV']:
+        fit_ss = fit_fh.fh_derivative(tp,dt,**parr_ss)
+        eff_ss = fit_ss
+        eff_ss[-1] = eff_ss[-2]
+        fit_ps = fit_fh.fh_derivative(tp,dt,**parr_ps)
+        eff_ps = fit_ps
+        eff_ps[-1] = eff_ps[-2]
+
+        err_ss = np.zeros_like(tp)
+        err_ps = np.zeros_like(tp)
+        for i,t in enumerate(tp):
+            err_ss[i] = np.sqrt(np.dot(\
+                th_grad_ss_fun(t,dt),np.dot(cov_ss,th_grad_ss_fun(t,dt))))
+            err_ps[i] = np.sqrt(np.dot(\
+                th_grad_ps_fun(t,dt),np.dot(cov_ps,th_grad_ps_fun(t,dt))))
+
+    ax.fill_between(tp,eff_ss-err_ss,eff_ss+err_ss,color=clrs[0],alpha=.3)
+    ax.fill_between(tp,eff_ps-err_ps,eff_ps+err_ps,color=clrs[1],alpha=.3)
 
 if __name__ == "__main__":
     plt.ion()
 
     min_fh = fit('a09m310',params)
 
+    print('plotting two point fit')
     l_ss = ['E_0','dE_10','zs_0','zs_1']
     l_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1']
     plot_results('a09m310',params,min_fh,'proton',[l_ss,l_ps],'two_pt')
-    '''
+
+    print('plotting gA fit')
     l_ss = ['E_0','dE_10','zs_0','zs_1','gA_00','gA_11','gA_10','dAss_0','dAss_1']
     l_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1',\
-        'gA_00','gA_11','gA_10','dAss_0','dAps_0','dAss_1','dAps_1']
+        'gA_00','gA_11','gA_10','dAps_0','dAps_1']
     plot_results('a09m310',params,min_fh,'gA',[l_ss,l_ps],'gA')
 
+    print('plotting gV fit')
     l_ss = ['E_0','dE_10','zs_0','zs_1','gV_00','gV_11','gV_10','dVss_0','dVss_1']
     l_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1',\
-        'gV_00','gV_11','gV_10','dVss_0','dVps_0','dVss_1','dVps_1']
+        'gV_00','gV_11','gV_10','dVps_0','dVps_1']
     plot_results('a09m310',params,min_fh,'gV',[l_ss,l_ps],'gV')
-    '''
 
     plt.ioff()
     if run_from_ipython():

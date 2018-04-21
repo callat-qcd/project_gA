@@ -66,5 +66,3 @@ def fh_derivative(t, tau, E_0, snk_0, src_0, g_00, d_0,\
     me += -fh_ratio(t    , E_0, snk_0, src_0, g_00, d_0,\
         dE_10=dE_10, snk_1=snk_1, src_1=src_1, g_11=g_11, g_10=g_10,d_1=d_1)
     return me / tau
-
-''' NOW Define Theano variables to take derivatives '''
