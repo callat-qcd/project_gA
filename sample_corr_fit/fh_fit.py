@@ -185,9 +185,9 @@ def fit(ens,params):
     for k in params[ens]['fit_ini']:
         ini_vals[k] = params[ens]['fit_ini'][k]
         if 'dA' in k or 'dV' in k:
-            ini_vals['error_'+k] = 0.005*params[ens]['fit_ini'][k]
+            ini_vals['error_'+k] = 0.02*params[ens]['fit_ini'][k]
         else:
-            ini_vals['error_'+k] = 0.005*params[ens]['fit_ini'][k]
+            ini_vals['error_'+k] = 0.02*params[ens]['fit_ini'][k]
     ini_vals['limit_dE_10'] = (0,10)
     ini_vals['limit_zs_0'] = (0,1)
     ini_vals['limit_zs_1'] = (0,1)
