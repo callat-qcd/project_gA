@@ -213,10 +213,10 @@ def fit(ens,params):
         for k in min_fh.values:
             ini_vals_bs[k] = min_fh.values[k]
             ini_vals['error_'+k] = 0.2*min_fh.errors[k]
-            bs_lams[k] = np.zeros([params['a09m310']['Nbs']])
+            bs_lams[k] = np.zeros([params[ens]['Nbs']])
         bs_fits = []
         #for bs in tqdm.tqdm(range(params[ens]['Nbs']),desc='Nbs'):
-        for bs in tqdm.tqdm(range(params['a09m310']['Nbs']),desc='Nbs'):
+        for bs in tqdm.tqdm(range(params[ens]['Nbs']),desc='Nbs'):
             chisq_fh = ChisqFH(y_bs[bs],cov_inv,ens,params)
             min_fh_bs = mn.Minuit(chisq_fh, pedantic=False, print_level=0,**ini_vals_bs)
             min_fh_bs.migrad()
@@ -267,13 +267,14 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
     t_p_i ,t_p_f  = params[ens]['t_min_max']['proton']
     t_gA_i,t_gA_f = params[ens]['t_min_max']['gA']
     t_gV_i,t_gV_f = params[ens]['t_min_max']['gV']
+    dt = 0.1
+    shift  = int(params['tau']/dt)
     if corr == 'proton':
-        tp = np.arange(t_p_i,t_p_f+.1,.1)
+        tp = np.arange(t_p_i,t_p_f+dt,dt)
     elif corr == 'gA':
-        tp = np.arange(t_gA_i,t_gA_f+.1,.1)
+        tp = np.arange(t_gA_i,t_gA_f+dt,dt)
     elif corr == 'gV':
-        tp = np.arange(t_gV_i,t_gV_f+.1,.1)
-    dt = tp[1] - tp[0]
+        tp = np.arange(t_gV_i,t_gV_f+dt,dt)
 
     ''' define the theano scalars we need '''
     t,tau,e0,zs0,zp0,de10,zs1,zp1 = Tn.dscalars('t','tau','e0','zs0','zp0','de10','zs1','zp1')
@@ -392,11 +393,11 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
 
     if corr == 'proton':
         fit_ss = fit_fh.c2pt(tp,**parr_ss)
-        eff_ss = np.log(fit_ss / np.roll(fit_ss,-1)) / dt
-        eff_ss[-1] = eff_ss[-2]
+        eff_ss = np.log(fit_ss / np.roll(fit_ss,-shift)) / (shift*dt)
+        eff_ss[-shift:] = eff_ss[-(shift+1)]
         fit_ps = fit_fh.c2pt(tp,**parr_ps)
-        eff_ps = np.log(fit_ps / np.roll(fit_ps,-1)) / dt
-        eff_ps[-1] = eff_ps[-2]
+        eff_ps = np.log(fit_ps / np.roll(fit_ps,-shift)) / (shift*dt)
+        eff_ps[-shift:] = eff_ps[-(shift+1)]
 
         err_ss = np.zeros_like(tp)
         err_ps = np.zeros_like(tp)
@@ -406,12 +407,12 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
             err_ps[i] = np.sqrt(np.dot(\
                 d_th_eff_ps_fun(t,dt),np.dot(cov_ps,d_th_eff_ps_fun(t,dt))))
     elif corr in ['gA','gV']:
-        fit_ss = fit_fh.fh_derivative(tp,dt,**parr_ss)
+        fit_ss = fit_fh.fh_derivative(tp,shift*dt,**parr_ss)
         eff_ss = fit_ss
-        eff_ss[-1] = eff_ss[-2]
-        fit_ps = fit_fh.fh_derivative(tp,dt,**parr_ps)
+        eff_ss[-shift:] = eff_ss[-(shift+1)]
+        fit_ps = fit_fh.fh_derivative(tp,shift*dt,**parr_ps)
         eff_ps = fit_ps
-        eff_ps[-1] = eff_ps[-2]
+        eff_ps[-shift:] = eff_ps[-(shift+1)]
 
         err_ss = np.zeros_like(tp)
         err_ps = np.zeros_like(tp)
@@ -427,24 +428,24 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
 if __name__ == "__main__":
     plt.ion()
 
-    min_fh = fit('a09m310',params)
+    min_fh = fit(ens,params)
 
     print('plotting two point fit')
     l_ss = ['E_0','dE_10','zs_0','zs_1']
     l_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1']
-    plot_results('a09m310',params,min_fh,'proton',[l_ss,l_ps],'two_pt')
+    plot_results(ens,params,min_fh,'proton',[l_ss,l_ps],'two_pt')
 
     print('plotting gA fit')
     l_ss = ['E_0','dE_10','zs_0','zs_1','gA_00','gA_11','gA_10','dAss_0','dAss_1']
     l_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1',\
         'gA_00','gA_11','gA_10','dAps_0','dAps_1']
-    plot_results('a09m310',params,min_fh,'gA',[l_ss,l_ps],'gA')
+    plot_results(ens,params,min_fh,'gA',[l_ss,l_ps],'gA')
 
     print('plotting gV fit')
     l_ss = ['E_0','dE_10','zs_0','zs_1','gV_00','gV_11','gV_10','dVss_0','dVss_1']
     l_ps = ['E_0','dE_10','zs_0','zp_0','zs_1','zp_1',\
         'gV_00','gV_11','gV_10','dVps_0','dVps_1']
-    plot_results('a09m310',params,min_fh,'gV',[l_ss,l_ps],'gV')
+    plot_results(ens,params,min_fh,'gV',[l_ss,l_ps],'gV')
 
     plt.ioff()
     if run_from_ipython():
