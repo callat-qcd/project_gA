@@ -185,9 +185,9 @@ def fit(ens,params):
     for k in params[ens]['fit_ini']:
         ini_vals[k] = params[ens]['fit_ini'][k]
         if k in params['errors']:
-            ini_vals['error_'+k] = params['errors'][k]*params[ens]['fit_ini'][k]
+            ini_vals['error_'+k] = abs(params['errors'][k]*params[ens]['fit_ini'][k])
         else:
-            ini_vals['error_'+k] = 0.02*params[ens]['fit_ini'][k]
+            ini_vals['error_'+k] = 0.02*abs(params[ens]['fit_ini'][k])
     for k in params['limits']:
         ini_vals['limit_'+k] = params['limits'][k]
     '''
