@@ -184,18 +184,21 @@ def fit(ens,params):
     ini_vals = dict()
     for k in params[ens]['fit_ini']:
         ini_vals[k] = params[ens]['fit_ini'][k]
-        if 'dA' in k or 'dV' in k:
-            ini_vals['error_'+k] = 0.02*params[ens]['fit_ini'][k]
+        if k in params['errors']:
+            ini_vals['error_'+k] = params['errors'][k]*params[ens]['fit_ini'][k]
         else:
             ini_vals['error_'+k] = 0.02*params[ens]['fit_ini'][k]
+    for k in params['limits']:
+        ini_vals['limit_'+k] = params['limits'][k]
+    '''
     ini_vals['limit_dE_10'] = (0,10)
-    ini_vals['limit_zs_0'] = (0,1)
-    ini_vals['limit_zs_1'] = (0,1)
-    ini_vals['limit_gA_11'] = (-10,10)
+    ini_vals['limit_zs_0']  = (0,1)
+    ini_vals['limit_zs_1']  = (0,1)
+    ini_vals['limit_gA_11'] = (-20,10)
     ini_vals['limit_gA_10'] = (-5,5)
-    ini_vals['limit_gV_11'] = (-10,10)
+    ini_vals['limit_gV_11'] = (-20,10)
     ini_vals['limit_gV_10'] = (-5,5)
-
+    '''
     min_fh = mn.Minuit(chisq_fh, pedantic=False, print_level=1,**ini_vals)
     min_fh.migrad()
     #min_fh.minos()

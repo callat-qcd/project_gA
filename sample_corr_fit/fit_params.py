@@ -1,6 +1,19 @@
 params = dict()
 params['tau'] = 1
 params['bs'] = False
+params['errors'] = {
+    '''multiplicative factor on central value to set up grid search'''
+}
+params['limits'] = {
+    'dE_10':(0,10),
+    'zs_0' :(0,1),
+    'zs_1' :(0,1),
+    'gA_11':(-20,20),
+    'gA_10':(-10,10),
+    'gV_11':(-20,20),
+    'gV_10':(-10,10)
+}
+
 
 ''' a15 ensembles '''
 params['a15m400'] = dict()
@@ -306,26 +319,26 @@ params['a12m220S']['plt_range'] = {
     'gV'    :[0,12,0.98,1.15]
 }
 params['a12m220S']['fit_ini'] = {
-    'E_0'   :0.6171,
-    'dE_10' :1.02,
+    'E_0'   :0.6232,
+    'dE_10' :1.5,
     'gA_00' :1.28,
     'gA_11' :-0.162,
     'gA_10' :9.54,
     'gV_00' :1.01,
     'gV_11' :0.915,
     'gV_10' :-0.168,
-    'zs_0'  :8.12e-5,
-    'zp_0'  :5.54e-3,
-    'zs_1'  :1.15e-4,
-    'zp_1'  :1.46e-3,
-    'dAss_0':-4.49e-7,
-    'dAps_0':-5.42e-4,
-    'dAss_1':-3.98e-7,
-    'dAps_1':-1.83e-4,
-    'dVss_0':1.19e-8,
-    'dVps_0':-3.45e-6,
-    'dVss_1':1.06e-8,
-    'dVps_1':-1.84e-6,
+    'zs_0'  :8.3e-5,
+    'zp_0'  :5.75e-3,
+    'zs_1'  :1.32e-2,
+    'zp_1'  :1.08e-1,
+    'dAss_0':3.6e-7,
+    'dAps_0':-7.83e-4,
+    'dAss_1':1.88e-7,
+    'dAps_1':3.19e-4,
+    'dVss_0':4.39e-10,
+    'dVps_0':7.84e-7,
+    'dVss_1':3.19e-9,
+    'dVps_1':-3.55e-7,
 }
 
 params['a12m220'] = dict()
