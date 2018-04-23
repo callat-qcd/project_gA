@@ -58,7 +58,7 @@ source deactivate
 jupyter notebook ga_workbook.ipynb
 ```
 
-## Tested with the following Python Setup
+## ga_workbook.ipynb Tested with the following Python Setup
 ```
 python version: 3.6.1 |Anaconda 4.4.0 (x86_64)| (default, May 11 2017, 13:04:09)
 [GCC 4.2.1 Compatible Apple LLVM 6.0 (clang-600.0.57)]
@@ -82,6 +82,27 @@ mpl    version: 2.0.2
 lsqfit version: 9.1.3
 gvar   version: 8.2.2
 ```
+
+## ga_sample_corr_fitter.ipynb Tested with the following Python Setup
+```
+python version: 3.6.1 |Anaconda 4.4.0 (x86_64)| (default, May 11 2017, 13:04:09)
+[GCC 4.2.1 Compatible Apple LLVM 6.0 (clang-600.0.57)]
+numpy  version: 1.12.1
+scipy  version: 0.19.0
+mpl    version: 2.0.2
+iminuit version: 1.1.1
+```
+
+```
+python  version: 2.7.14 (default, Sep 25 2017, 09:53:22)
+[GCC 4.2.1 Compatible Apple LLVM 9.0.0 (clang-900.0.37)]
+numpy   version: 1.14.2
+scipy   version: 1.0.1
+mpl    version: 2.0.2
+iminuit version: 1.1.1
+```
+
+
 
 ## Copyright Notice
 
