@@ -9,18 +9,29 @@
 
 # project g<sub>A</sub>
 
-This project is for the analysis code and data files for our calculation of g<sub>A</sub> with MDWF on HISQ, and contains the following:
+This project performs the chiral, continuum, infinite volume extrapolation of the g<sub>A</sub> values computed with MDWF on HISQ lattice action, as described in Nature XXXXX [arXiv:1805.xxxxx].  To perform the extrapolation, we have created a Jupyter notebook and and accompanying Python library:
 * `ga_workbook.ipynb`: Jupyter notebook for chiral-continuum extrapolation analysis used in the final analysis
-* `data`: Directory of data
-  * `github_ga_v1.csv`: Bootstrapped correlation function analysis results in csv format
-    * Correlator data is made easily accessible from Jupyter with `pandas` and summarized in a dataframe
-  * `hisq_params.csv`: a/w<sub>0</sub> and α<sub>s</sub> for HISQ ensembles used for this work in csv format
-    * HISQ parameters are displayed in `pandas` dataframe
 * `callat_ga_lib`: Library for extrapolation
   * correlator data formatting for `lsqfit`
   * fit function definitions
   * systematic error breakdown definitions
   * matplotlib routines
+The bootstrap results of our correlation function analysis are contained in the `data` folder along with other input parameters from the HISQ ensembles needed in the analysis:
+* `data`: Directory of data
+  * `github_ga_v2.csv`: Bootstrapped correlation function analysis results in csv format
+    * Correlator data is made easily accessible from Jupyter with `pandas` and summarized in a dataframe
+  * `hisq_params.csv`: a/w<sub>0</sub> and α<sub>s</sub> for HISQ ensembles used for this work in csv format
+    * HISQ parameters are displayed in `pandas` dataframe
+
+In addition, the raw correlation functions computed for this project are included in `correlation_functions`:
+* `correlation_functions`: Directory of data
+  * `callat_gA.h5`
+We provide a sample correlation function fitter that performs the same analysis performed for our project in `sample_corr_fit`.  This sample fitter uses [`iminuit`](https://iminuit.readthedocs.io/en/latest/) v1.1.1 (our main analysis was performed with `lsqfit`):
+* `sample_corr_fit`
+  * `fh_fit.py`: main library for performing fit
+  * `ga_sample_corr_fitter.ipynb`: Jupyter notebook that uses the library
+  * `fit_params.py`: an input file generated through our Bayes constrained fit to pre-condition the frequentist least squares minimization.
+
 
 # Setup for Python environment
 ## Download Anaconda and install
