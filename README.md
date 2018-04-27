@@ -9,7 +9,7 @@
 
 # project g<sub>A</sub>
 
-This project performs the chiral, continuum, infinite volume extrapolation of the g<sub>A</sub> values computed with MDWF on HISQ lattice action, as described in Nature XXXXX [arXiv:1805.xxxxx].  To perform the extrapolation, we have created a Jupyter notebook and and accompanying Python library:
+This project performs the chiral, continuum, infinite volume extrapolation of the g<sub>A</sub> values computed with MDWF on HISQ lattice action, as described in Nature XXXXX [arXiv:1805.xxxxx].  To perform the extrapolation, we have created a Jupyter notebook and an accompanying Python library:
 * `ga_workbook.ipynb`: Jupyter notebook for chiral-continuum extrapolation analysis used in the final analysis
 * `callat_ga_lib`: Library for extrapolation
   * correlator data formatting for `lsqfit`
