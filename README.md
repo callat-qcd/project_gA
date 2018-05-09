@@ -117,4 +117,4 @@ NOTICE.  This Software was developed under funding from the U.S. Department of E
 
 | | |
 |:---:|:---:|
-| [<img src='./data/scidac_logo.png' width='410' />](http://www.scidac.gov/) | [<img src='./data/doe_oos_highres.jpg' width='410'/>](https://science.energy.gov) |
+| [<img src='./data/scidac_logo.png' width='415' />](http://www.scidac.gov/) | [<img src='./data/doe_oos_highres.jpg' width='415'/>](https://science.energy.gov) |
