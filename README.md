@@ -111,3 +111,11 @@ project_gA Copyright (c) 2018, The Regents of the University of California (UC),
 If you have questions about your rights to use or distribute this software, please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
 
 NOTICE.  This Software was developed under funding from the U.S. Department of Energy and the U.S. Government consequently retains certain rights.  As such, the U.S. Government has been granted for itself and others acting on its behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software to reproduce, distribute copies to the public, prepare derivative works, and perform publicly and display publicly, and to permit other to do so.
+
+| | | |
+|:---:|:---:|:---:|
+| [<img src='./data/incite_logo.png' width='275'/>](http://www.doeleadershipcomputing.org/)  | [<img src='./data/olcf_logo.png' width='275'/>](https://www.olcf.ornl.gov/) | [<img src='./data/llnl_logo.png' width='275' />](https://hpc.llnl.gov/) |
+
+| | |
+|:---:|:---:|
+| [<img src='./data/scidac_logo.png' width='410' />](http://www.scidac.gov/) | [<img src='./data/doe_oos_highres.jpg' width='410'/>](https://science.energy.gov) |
