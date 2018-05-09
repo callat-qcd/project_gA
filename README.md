@@ -9,7 +9,7 @@
 
 # project g<sub>A</sub>
 
-This project performs the chiral, continuum, infinite volume extrapolation of the g<sub>A</sub> values computed with MDWF on HISQ lattice action, as described in Nature XXXXX [arXiv:1805.xxxxx].  To perform the extrapolation, we have created a Jupyter notebook and and accompanying Python library:
+This project performs the chiral, continuum, infinite volume extrapolation of the g<sub>A</sub> values computed with MDWF on HISQ lattice action, as described in Nature XXXXX [arXiv:1805.xxxxx].  To perform the extrapolation, we have created a Jupyter notebook and an accompanying Python library:
 * `ga_workbook.ipynb`: Jupyter notebook for chiral-continuum extrapolation analysis used in the final analysis
 * `callat_ga_lib`: Library for extrapolation
   * correlator data formatting for `lsqfit`
@@ -39,14 +39,13 @@ Download [Anaconda](https://www.continuum.io/downloads) and follow installation 
 
 ## Create Python environment with Anaconda
 ```bash
-conda create --name callat_ga python=3 anaconda
-source activate callat_ga
-python setup.py install
+conda create --name pyqcd3 python=3 anaconda
+source activate pyqcd3
 ```
 
 Key libraries from [gplepage GitHub](https://github.com/gplepage).
-* `gvar` version 8.3.2
-* `lsqfit` version 9.1.3
+* `gvar` version 8.3.2 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.816304.svg)](https://doi.org/10.5281/zenodo.816304)
+* `lsqfit` version 9.1.3 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.494988.svg)](https://doi.org/10.5281/zenodo.494988)
 
 Exit conda environment with
 ```bash
