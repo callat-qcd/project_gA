@@ -1,0 +1,15 @@
+name: pyqcd3
+channels:
+  - conda-forge
+dependencies:
+  - pandas
+  - numpy
+  - scipy
+  - matplotlib
+  - gvar
+  - lsqfit
+  - theano
+  - iminuit
+  - tables
+  - tqdm
+

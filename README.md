@@ -7,6 +7,8 @@
     /img>
 </figure>
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1241374.svg)](https://doi.org/10.5281/zenodo.1241374)
+
 # project g<sub>A</sub>
 
 This project performs the chiral, continuum, infinite volume extrapolation of the g<sub>A</sub> values computed with MDWF on HISQ lattice action, as described in [Nature **558**, 91–94 (2018)](https://www.nature.com/articles/s41586-018-0161-8) or [arXiv:1805.12130](https://arxiv.org/abs/1805.12130).  To perform the extrapolation, we have created a Jupyter notebook and an accompanying Python library:
@@ -32,6 +34,9 @@ We provide a sample correlation function fitter that performs the same analysis 
   * `ga_sample_corr_fitter.ipynb`: Jupyter notebook that uses the library
   * `fit_params.py`: an input file generated through our Bayes constrained fit to pre-condition the frequentist least squares minimization.
 
+# Run on [Binder](https://mybinder.org/)
+
+You can run the notebooks in this repository by clinking the Binder badge at the top of this README.
 
 # Setup for Python environment
 ## Download Anaconda and install
