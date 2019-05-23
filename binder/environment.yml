@@ -1,17 +1,16 @@
 name: pyqcd3
 channels:
   - conda-forge
-  - defaults
 dependencies:
-  - anaconda=custom
   - pandas
   - numpy
   - scipy
   - matplotlib
-  - gvar
-  - lsqfit
   - theano
   - iminuit
-  - tables
   - tqdm
-
+  - pip
+  - pip:
+    - lsqfit
+    - gvar
+    - tables
