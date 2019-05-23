@@ -1,7 +1,9 @@
 name: pyqcd3
 channels:
   - conda-forge
+  - defaults
 dependencies:
+  - anaconda=custom
   - pandas
   - numpy
   - scipy
