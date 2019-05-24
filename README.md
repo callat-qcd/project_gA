@@ -39,7 +39,9 @@ We provide a sample correlation function fitter that performs the same analysis 
 
 You can run the $g_A$ notebook in this repository by clinking the Binder badge at the top of this README.
 Or by clicking [here](https://mybinder.org/v2/gh/callat-qcd/project_gA/binder?filepath=ga_workbook.ipynb)
- 
+
+If you want to run the example correlator fitter notebook instead, you can click [here](https://mybinder.org/v2/gh/callat-qcd/project_gA/binder?filepath=sample_corr_fit%2Fga_sample_corr_fitter.ipynb).
+  
 # Setup for Python environment
 ## Download Anaconda and install
 Download [Anaconda](https://www.continuum.io/downloads) and follow installation instructions.
