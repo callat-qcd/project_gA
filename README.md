@@ -8,6 +8,8 @@
 </figure>
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1241374.svg)](https://doi.org/10.5281/zenodo.1241374)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/callat-qcd/project_gA/binder?filepath=ga_workbook.ipynb)
+
 
 # project g<sub>A</sub>
 
@@ -34,7 +36,13 @@ We provide a sample correlation function fitter that performs the same analysis 
   * `ga_sample_corr_fitter.ipynb`: Jupyter notebook that uses the library
   * `fit_params.py`: an input file generated through our Bayes constrained fit to pre-condition the frequentist least squares minimization.
 
+# Run on [Binder](https://mybinder.org/)
 
+You can run the $g_A$ notebook in this repository by clinking the Binder badge at the top of this README.
+Or by clicking [here](https://mybinder.org/v2/gh/callat-qcd/project_gA/binder?filepath=ga_workbook.ipynb)
+
+If you want to run the example correlator fitter notebook instead, you can click [here](https://mybinder.org/v2/gh/callat-qcd/project_gA/binder?filepath=sample_corr_fit%2Fga_sample_corr_fitter.ipynb).
+  
 # Setup for Python environment
 ## Download Anaconda and install
 Download [Anaconda](https://www.continuum.io/downloads) and follow installation instructions.
