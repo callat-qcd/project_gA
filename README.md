@@ -8,7 +8,7 @@
 </figure>
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1241374.svg)](https://doi.org/10.5281/zenodo.1241374)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/callat-qcd/project_gA/master?filepath=ga_workbook.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/callat-qcd/project_gA/master)
 
 
 # project g<sub>A</sub>
