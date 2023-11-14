@@ -27,7 +27,7 @@ if nature_figs:
 else:
     ms = '5'
     cs = 2
-    fs_l = 12
+    fs_l = 14
     fs_xy = 20
     ts = 16
     lw = 1
@@ -72,13 +72,13 @@ def format_data(switches, gadf, hqdf):
     ens_list = []
     for e in switches['ensembles']:
         ens = ens_abbr[e]
-        gar = gadf.query("ensemble=='%s'" %ens).sort_values(by='nbs')['ga'].as_matrix()
-        epi = gadf.query("ensemble=='%s'" %ens).sort_values(by='nbs')['epi'].as_matrix()
-        mpl = gadf.query("ensemble=='%s' and nbs==0" %ens)['mpil'].as_matrix()[0]
-        awm = hqdf.query("ensemble=='%s'" %ens)['aw0_mean'].as_matrix()[0]
-        aws = hqdf.query("ensemble=='%s'" %ens)['aw0_sdev'].as_matrix()[0]
-        afs = hqdf.query("ensemble=='%s'" %ens)['alfs'].as_matrix()[0]
-        ed  = hqdf.query("ensemble=='%s'" %ens)['eps_delta'].as_matrix()[0]
+        gar = gadf.query("ensemble=='%s'" %ens).sort_values(by='nbs')['ga'].values
+        epi = gadf.query("ensemble=='%s'" %ens).sort_values(by='nbs')['epi'].values
+        mpl = gadf.query("ensemble=='%s' and nbs==0" %ens)['mpil'].values[0]
+        awm = hqdf.query("ensemble=='%s'" %ens)['aw0_mean'].values[0]
+        aws = hqdf.query("ensemble=='%s'" %ens)['aw0_sdev'].values[0]
+        afs = hqdf.query("ensemble=='%s'" %ens)['alfs'].values[0]
+        ed  = hqdf.query("ensemble=='%s'" %ens)['eps_delta'].values[0]
         d = gv.dataset.avg_data({'gar': gar, 'epi':epi}, bstrap=True)
         gar_list.append(d['gar'])
         epi_list.append(d['epi'])
@@ -462,12 +462,46 @@ class plot_chiral_fit():
         self.plot_params['l3296f211b630m0074m037m440']   = {'abbr': 'a09m310',  'color': '#51a7f9', 'marker': 's', 'label': '$a\simeq 0.09$~fm'}
         self.plot_params['l4896f211b630m00363m0363m430'] = {'abbr': 'a09m220',  'color': '#51a7f9', 'marker': '^', 'label': ''}
         self.title = {
-            'xpt_4':r'NNLO+ct $\chi$PT','xpt_3':r'NNLO $\chi$PT',
+            'xpt_4':r'$M_\pi\approx220$ MeV','xpt_3':r'NNLO $\chi$PT',
             'xpt_2':r'NLO $\chi$PT',
             'xpt-full_4':r'N3LO $\chi$PT',
             'taylor_2':r'NLO Taylor $\epsilon_\pi^2$','taylor_4':r'NNLO Taylor $\epsilon_\pi^2$',
-            'linear_2':r'NLO Taylor $\epsilon_\pi$','linear_4':r'NNLO Taylor $\epsilon_\pi$'
+            'linear_2':r'NLO Taylor $\epsilon_\pi$','linear_4':r'NNLO Taylor $\epsilon_\pi$',
+            'data'    :r'CalLat $g_A$ data'
             }
+    def plot_data(self,s,data,phys_params):
+        fig = plt.figure('CalLat gA data',figsize=fig_size3)
+        ax = plt.axes(plt_axes)
+        x = data['prior']['epi']
+        y = data['y']['gar']
+        for i,ens in enumerate(s['ensembles']):
+            e = ens_abbr[ens]
+            dx = s['x_shift'][ens]
+            ax.errorbar(x[i].mean+dx,y[i].mean,xerr=x[i].sdev,yerr=y[i].sdev,\
+                ls='None',marker=self.plot_params[e]['marker'],fillstyle='full',\
+                markersize=ms,elinewidth=lw,capsize=cs,mew=lw,\
+                color=self.plot_params[e]['color'],label=self.plot_params[e]['label'])
+        # PDG
+        gA_pdg = [1.2723, 0.0023]
+        epi_phys = (phys_params['mpi'] / 4 / np.pi / phys_params['fpi'].mean*np.sqrt(2)).mean
+        ax.errorbar(x=epi_phys,y=gA_pdg[0],yerr=gA_pdg[1],\
+            ls='None',marker='o',fillstyle='none',color='black',\
+            markersize=ms,capsize=cs,elinewidth=lw,mew=lw,label='$g_A^{PDG}=1.2723(23)$')
+        ax.legend()
+        handles, labels = ax.get_legend_handles_labels()
+        leg = ax.legend(handles=handles,loc=4,ncol=2,fontsize=fs_l,\
+            edgecolor='k',fancybox=False)
+        leg.get_frame().set_linewidth(lw)
+
+        ax.set_ylim([1.075,1.375])
+        ax.set_xlim([0,0.32])
+        ax.set_xlabel('$\epsilon_\pi=m_\pi/(4\pi F_\pi)$', fontsize=fs_xy)
+        ax.set_ylabel('$g_A$', fontsize=fs_xy)
+        ax.xaxis.set_tick_params(labelsize=ts,width=lw)
+        ax.yaxis.set_tick_params(labelsize=ts,width=lw)
+        if s['save_figs']:
+            plt.savefig('plots/callat_gA_data.pdf', transparent=True)
+
     def plot_chiral(self,s,data,result_list):
         # convergence
         def plot_convergence(result,xp,ansatz):
@@ -884,14 +918,21 @@ class plot_chiral_fit():
                 # plot legend
                 v_legend(ax)
                 # format plot
-                ax.set_ylim([1.22,1.3])
+                ax.set_ylim([1.21,1.3])
                 ax.set_xlim([0,0.025])
+                ax.text(0.0025,1.22, r'$M_\pi L=5.4$',fontsize=16,ha='center',va='center')
+                ax.text(0.0025,1.215,r'$(L=40a)$',    fontsize=16,ha='center',va='center')
+                ax.text(0.0070,1.23, r'$M_\pi L=4.3$',fontsize=16,ha='center',va='center')
+                ax.text(0.0070,1.225,r'$(L=32a)$',    fontsize=16,ha='center',va='center')
+                ax.text(0.0215,1.24, r'$M_\pi L=3.3$',fontsize=16,ha='center',va='center')
+                ax.text(0.0215,1.235,r'$(L=24a)$',    fontsize=16,ha='center',va='center')
                 ax.set_xlabel('$e^{-m_\pi L}/(m_\pi L)^{1/2}$', fontsize=fs_xy)
                 ax.set_ylabel('$g_A$', fontsize=fs_xy)
                 ax.yaxis.set_ticks([1.23,1.25,1.27,1.29])
                 ax.xaxis.set_tick_params(labelsize=ts,width=lw)
                 ax.yaxis.set_tick_params(labelsize=ts,width=lw)
                 ax.set_title(self.title[ansatz_truncate],fontdict={'fontsize':fs_xy,'verticalalignment':'top','horizontalalignment':'left'},x=0.05,y=0.9)
+
                 [ax.spines[key].set_linewidth(lw) for key in ax.spines]
                 if s['save_figs']:
                     plt.savefig('%s/volume_%s.pdf' %(self.loc,ansatz_truncate),transparent=True)
