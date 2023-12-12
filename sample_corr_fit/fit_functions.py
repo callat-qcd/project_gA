@@ -27,8 +27,9 @@ def c2pt(t,E_0,snk_0,src_0,dE_10=0.,snk_1=0.,src_1=0.,dE_21=0.,snk_2=0.,src_2=0.
     c += snk_2 * src_2 * np.exp(-t * (E_0 + dE_10 + dE_21))
     return c
 
-def fh_numerator(t, E_0, snk_0, src_0, g_00, d_0,\
-    dE_10=0., snk_1=0., src_1=0., g_11=0., g_10=0.,d_1=0.):
+def fh_numerator(t, E_0, snk_0, src_0, g_00, d_0=0.,\
+    dE_10=0., snk_1=0., src_1=0., g_11=0., g_10=0.,d_1=0.,\
+    dE_21=0., snk_2=0., src_2=0., g_22=0., g_21=0.,g_20=0.,d_2=0.):
     '''
     FH numerator function currently supports up to 2 states
     '''
@@ -46,23 +47,54 @@ def fh_numerator(t, E_0, snk_0, src_0, g_00, d_0,\
         R10 += -np.exp(-t * E_0) *np.exp(-dE_10 / 2)
         R10  = R10 / (np.exp(-dE_10 / 2) - np.exp(dE_10 / 2))
         num += g_10 *snk_1 * src_0 * R10
+    if snk_2 != 0.:
+        num += ( (t-1) *g_22 *snk_2 *src_2 + d_2 ) *np.exp(-t * (E_0 + dE_10 +dE_21))
+        ''' define R02 '''
+        R02  = np.exp(-t * E_0) * np.exp(-(dE_10+dE_21) / 2)
+        R02 += -np.exp(-t * (E_0 + dE_10 + dE_21)) *np.exp((dE_10+dE_21) / 2)
+        R02  = R02 / (np.exp((dE_10+dE_21) / 2) - np.exp(-(dE_10+dE_21) / 2))
+        num += g_20 *snk_0 *src_2 *R02
+
+        ''' define R20 '''
+        R20  = np.exp(-t * (E_0 + dE_10 + dE_21)) * np.exp((dE_10 + dE_21) / 2)
+        R20 += -np.exp(-t * E_0) *np.exp(-(dE_10 + dE_21) / 2)
+        R20  = R20 / (np.exp(-(dE_10 +dE_21) / 2) - np.exp((dE_10 + dE_21) / 2))
+        num += g_20 *snk_2 * src_0 * R20
+        
+        ''' define R12 '''
+        R12  = np.exp(-t * (E_0+dE_10)) * np.exp(-dE_21 / 2)
+        R12 += -np.exp(-t * (E_0 + dE_10 + dE_21)) *np.exp(dE_21 / 2)
+        R12  = R12 / (np.exp(dE_21 / 2) - np.exp(-dE_21 / 2))
+        num += g_21 *snk_1 *src_2 *R12
+
+        ''' define R21 '''
+        R21  = np.exp(-t * (E_0 + dE_10 + dE_21)) * np.exp(dE_21 / 2)
+        R21 += -np.exp(-t * (E_0+dE_10)) *np.exp(-dE_21 / 2)
+        R21  = R21 / (np.exp(-dE_21 / 2) - np.exp(dE_21 / 2))
+        num += g_21 *snk_2 * src_1 * R21
     return num
 
-def fh_ratio(t, E_0, snk_0, src_0, g_00, d_0,\
-    dE_10=0., snk_1=0., src_1=0., g_11=0., g_10=0.,d_1=0.):
+def fh_ratio(t, E_0, snk_0, src_0, g_00, d_0=0.,\
+    dE_10=0., snk_1=0., src_1=0., g_11=0., g_10=0.,d_1=0.,\
+    dE_21=0., snk_2=0., src_2=0., g_22=0., g_21=0.,g_20=0.,d_2=0.):
     '''
     Construct the ratio FH/2pt function used in dm/dlam
     fh_ratio(t) = fh_numerator(t) / proton(t)
     '''
-    R = fh_numerator(t, E_0, snk_0, src_0, g_00, d_0,\
-        dE_10=dE_10, snk_1=snk_1, src_1=src_1, g_11=g_11, g_10=g_10,d_1=d_1)
-    R = R / c2pt(t, E_0, snk_0, src_0, dE_10=dE_10, snk_1=snk_1, src_1=src_1)
+    R = fh_numerator(t, E_0, snk_0, src_0, g_00, d_0=d_0,\
+        dE_10=dE_10, snk_1=snk_1, src_1=src_1, g_11=g_11, g_10=g_10,d_1=d_1,\
+        dE_21=dE_21, snk_2=snk_2, src_2=src_2, g_22=g_22,g_21=g_21,g_20=g_20,d_2=d_2)
+    R = R / c2pt(t, E_0, snk_0, src_0, dE_10=dE_10, snk_1=snk_1, src_1=src_1,\
+                 dE_21=dE_21,snk_2=snk_2,src_2=src_2)
     return R
 
-def fh_derivative(t, tau, E_0, snk_0, src_0, g_00, d_0,\
-    dE_10=0., snk_1=0., src_1=0., g_11=0., g_10=0.,d_1=0.):
+def fh_derivative(t, tau, E_0, snk_0, src_0, g_00, d_0=0.,\
+    dE_10=0., snk_1=0., src_1=0., g_11=0., g_10=0.,d_1=0.,\
+    dE_21=0., snk_2=0., src_2=0., g_22=0., g_21=0., g_20=0., d_2=0.):
     me  =  fh_ratio(t+tau, E_0, snk_0, src_0, g_00, d_0,\
-        dE_10=dE_10, snk_1=snk_1, src_1=src_1, g_11=g_11, g_10=g_10,d_1=d_1)
+        dE_10=dE_10, snk_1=snk_1, src_1=src_1, g_11=g_11, g_10=g_10,d_1=d_1,\
+        dE_21=dE_21, snk_2=snk_2, src_2=src_2, g_22=g_22, g_21=g_21,g_20=g_20,d_2=d_2)
     me += -fh_ratio(t    , E_0, snk_0, src_0, g_00, d_0,\
-        dE_10=dE_10, snk_1=snk_1, src_1=src_1, g_11=g_11, g_10=g_10,d_1=d_1)
+        dE_10=dE_10, snk_1=snk_1, src_1=src_1, g_11=g_11, g_10=g_10,d_1=d_1,\
+        dE_21=dE_21, snk_2=snk_2, src_2=src_2, g_22=g_22, g_21=g_21,g_20=g_20,d_2=d_2)
     return me / tau

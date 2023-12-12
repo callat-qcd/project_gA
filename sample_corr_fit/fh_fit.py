@@ -12,6 +12,7 @@ import tqdm
 import theano as th
 import theano.tensor as Tn
 import fit_params as fitp
+minvers = int((mn.__version__).split('.')[0])
 
 def run_from_ipython():
     try:
@@ -32,7 +33,7 @@ def rgb(ens):
 ens = 'a09m310'
 params = fitp.params
 params['tau'] = 1
-params['bs'] = False
+params['bs'] = True
 params[ens]['seed'] = ens
 params[ens]['Nbs']  = 5000
 params[ens]['t_min_max'] = {
@@ -68,16 +69,21 @@ params[ens]['fit_ini'] = {
     'dVps_1':-4.1e-10,
 }
 
-def get_data(ens,params,alldata=False,verbose=False):
+def get_data(dfile,ens,params,alldata=False,verbose=False):
     t_p_i ,t_p_f  = params[ens]['t_min_max']['proton']
     t_gA_i,t_gA_f = params[ens]['t_min_max']['gA']
     t_gV_i,t_gV_f = params[ens]['t_min_max']['gV']
     tau = params['tau']
-    dfile = h5.open_file('callat_gA.h5')
-    proton = dfile.get_node('/proton/'+ens).read()
-    gA     = dfile.get_node('/gA/'+ens).read()
-    gV     = dfile.get_node('/gV/'+ens).read()
-    dfile.close()
+    ffile = h5.open_file(dfile)
+    if dfile == 'callat_gA.h5':
+        proton = ffile.get_node('/proton/'+ens).read()
+        gA     = ffile.get_node('/gA/'+ens).read()
+        gV     = ffile.get_node('/gV/'+ens).read()
+    else:
+        proton = ffile.get_node('/'+ens+'/proton/').read()[:,:,:,0]
+        gA     = ffile.get_node('/'+ens+'/proton_A3/').read()[:,:,:,0]
+        gV     = ffile.get_node('/'+ens+'/proton_V4/').read()[:,:,:,0]
+    ffile.close()
     Ncfg,Nt,Nsnk = proton.shape
     Nbs = params[ens]['Nbs']
     Mbs = proton.shape[0]
@@ -174,22 +180,25 @@ class ChisqFH():
         dy = f - self.y
         return np.dot(dy,np.dot(self.cov_inv,dy))
 
-def fit(ens,params):
-    y,y_bs  = get_data(ens,params)
+def fit(dfile,ens,params):
+    y,y_bs  = get_data(dfile,ens,params)
     cov     = np.cov(y_bs,rowvar=False)
     cov_inv = sp.linalg.inv(cov)
 
     chisq_fh = ChisqFH(y,cov_inv,ens,params)
-
     ini_vals = dict()
     for k in params[ens]['fit_ini']:
-        ini_vals[k] = params[ens]['fit_ini'][k]
-        if k in params['errors']:
-            ini_vals['error_'+k] = abs(params['errors'][k]*params[ens]['fit_ini'][k])
+        if minvers == 2:
+            ini_vals[k] = params[ens]['fit_ini'][k]
         else:
-            ini_vals['error_'+k] = 0.02*abs(params[ens]['fit_ini'][k])
-    for k in params['limits']:
-        ini_vals['limit_'+k] = params['limits'][k]
+            ini_vals[k] = params[ens]['fit_ini'][k]
+            if k in params['errors']:
+                ini_vals['error_'+k] = abs(params['errors'][k]*params[ens]['fit_ini'][k])
+            else:
+                ini_vals['error_'+k] = 0.02*abs(params[ens]['fit_ini'][k])
+    if minvers == 1:
+        for k in params['limits']:
+            ini_vals['limit_'+k] = params['limits'][k]
     '''
     ini_vals['limit_dE_10'] = (0,10)
     ini_vals['limit_zs_0']  = (0,1)
@@ -199,37 +208,52 @@ def fit(ens,params):
     ini_vals['limit_gV_11'] = (-20,10)
     ini_vals['limit_gV_10'] = (-5,5)
     '''
-    min_fh = mn.Minuit(chisq_fh, pedantic=False, print_level=1,**ini_vals)
-    min_fh.migrad()
-    #min_fh.minos()
+    if minvers == 1:
+        min_fh = mn.Minuit(chisq_fh, pedantic=False, print_level=1,**ini_vals)
+    else:
+        min_fh = mn.Minuit(chisq_fh, **ini_vals)
+        for k in params['limits']:
+            min_fh.limits[k] = params['limits'][k]
+        if k in params[ens]['fit_ini']:
+            min_fh.errors[k] = 0.02*abs(params[ens]['fit_ini'][k])
+    min_fh.migrad(ncall=1000000)
+    #min_fh.minos(ncall=100000)
 
     lam = []
     for k in ini_vals:
         if 'error' not in k and 'limit' not in k:
             lam.append(k)
     dof = len(y) - len(lam)
-    print("chi^2 = %.4f, dof = %d, Q=%.4f" %(min_fh.fval,dof,fit_fh.p_val(min_fh.fval,dof)))
+    print("chi^2 = %.4f, dof = %d, chi^2/dof = %.4f, Q=%.4f" %(min_fh.fval,dof,min_fh.fval/dof,fit_fh.p_val(min_fh.fval,dof)))
+    print("gA = %.4f, gAerr = %.4f, gV = %.4f,gVerr = %.4f" %(min_fh.values['gA_00'],min_fh.errors['gA_00'], min_fh.values['gV_00'],min_fh.errors['gV_00']))
 
     if params['bs']:
         ini_vals_bs = dict(ini_vals)
         bs_lams = dict()
-        for k in min_fh.values:
-            ini_vals_bs[k] = min_fh.values[k]
-            ini_vals['error_'+k] = 0.2*min_fh.errors[k]
+        #for k in min_fh.values:
+        for k in ini_vals:
+            if minvers == 1:
+                ini_vals_bs[k] = min_fh.values[k]
+                ini_vals['error_'+k] = 0.2*min_fh.errors[k]
+            else:
+                ini_vals_bs[k] = random.gauss(min_fh.values[k],0.2*min_fh.errors[k])
             bs_lams[k] = np.zeros([params[ens]['Nbs']])
         bs_fits = []
         #for bs in tqdm.tqdm(range(params[ens]['Nbs']),desc='Nbs'):
         for bs in tqdm.tqdm(range(params[ens]['Nbs']),desc='Nbs'):
             chisq_fh = ChisqFH(y_bs[bs],cov_inv,ens,params)
-            min_fh_bs = mn.Minuit(chisq_fh, pedantic=False, print_level=0,**ini_vals_bs)
+            if minvers == 1:
+                min_fh_bs = mn.Minuit(chisq_fh, pedantic=False, print_level=0,**ini_vals_bs)
+            else:
+                min_fh_bs = mn.Minuit(chisq_fh, **ini_vals_bs)
             min_fh_bs.migrad()
             bs_fits.append(min_fh_bs)
-            for k in min_fh_bs.values:
+            for k in ini_vals:
                 bs_lams[k][bs] = min_fh_bs.values[k]
         print(bs_lams['gA_00'].mean(),bs_lams['gA_00'].std())
     return min_fh
 
-def plot_results(ens,params,mn,corr,lam_lst,figname,\
+def plot_results(dfile,ens,params,mn,corr,lam_lst,figname,\
     figsize=(7,7/1.618034333)):
     ''' plot data '''
     dset = {'proton':0,'gA':1,'gV':2}
@@ -237,7 +261,7 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
     clrs = ['k',rgb(ens)]
     lbl     = ['SS','PS']
     ylabel = {'proton':r'$m_{eff}(t)$','gA':r'$g_A^{FH}(t)$','gV':r'$g_V^{FH}(t)$'}
-    y,y_bs  = get_data(ens,params,alldata=True)
+    y,y_bs  = get_data(dfile,ens,params,alldata=True)
     nt      = y[di].shape[0]
 
     fig = plt.figure(figname)
@@ -262,7 +286,8 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
     l_ss,l_ps = lam_lst[0],lam_lst[1]
     i_ss = [i for i,l in enumerate(lam_all) if l not in l_ss]
     i_ps = [i for i,l in enumerate(lam_all) if l not in l_ps]
-    cov_param = np.array(mn.matrix(correlation=False))
+    #cov_param = np.array(mn.matrix(correlation=False))
+    cov_param = np.array(mn.covariance)
 
     cov_ss = np.delete(np.delete(cov_param,i_ss,axis=0),i_ss,axis=1)
     cov_ps = np.delete(np.delete(cov_param,i_ps,axis=0),i_ps,axis=1)
@@ -396,6 +421,7 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
 
     if corr == 'proton':
         fit_ss = fit_fh.c2pt(tp,**parr_ss)
+        print(parr_ss,parr_ps)
         eff_ss = np.log(fit_ss / np.roll(fit_ss,-shift)) / (shift*dt)
         eff_ss[-shift:] = eff_ss[-(shift+1)]
         fit_ps = fit_fh.c2pt(tp,**parr_ps)
@@ -431,7 +457,7 @@ def plot_results(ens,params,mn,corr,lam_lst,figname,\
 if __name__ == "__main__":
     plt.ion()
 
-    min_fh = fit(ens,params)
+    min_fh = fit(dfile,ens,params)
 
     print('plotting two point fit')
     l_ss = ['E_0','dE_10','zs_0','zs_1']
